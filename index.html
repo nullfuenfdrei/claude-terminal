@@ -35,6 +35,10 @@ body.nofx .scan,body.nofx .flick{display:none}
 .ov.hidden{display:none}
 .mbox{width:min(640px,100%);max-height:min(88vh,100%);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--hi);box-shadow:0 0 40px rgba(var(--glow),.25),inset 0 0 30px rgba(var(--glow),.05);animation:pop .25s cubic-bezier(.2,1.4,.4,1)}
 @keyframes pop{from{transform:scale(.94);opacity:0}}
+.drop{animation:drop .65s cubic-bezier(.25,1.6,.45,1)}
+@keyframes drop{0%{transform:translateY(-60px);opacity:0;filter:brightness(3)}60%{opacity:1}100%{transform:none;filter:none}}
+#stage.ismind .card{width:300px;font-size:12px;border-left:3px solid var(--hi)}
+#stage.ismind .card h4{font-size:13px;letter-spacing:.12em}
 .mhead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--hi);letter-spacing:.2em;font-size:12px;text-shadow:0 0 8px rgba(var(--glow),.7)}
 .x{background:none;border:0;color:var(--fg);font-size:16px;cursor:pointer}.x:hover{color:var(--hi)}
 .mtabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
@@ -361,7 +365,7 @@ function draw(now){
  if(SEL==="auto"&&now-autoT>SET.autoSec*1000)nextAuto();
  if(SCENE==="brain")$("hud2").innerHTML=`AZ ${(((az*57.3)%360)+360)%360|0}.${(az*573|0)%10}° · EL ${(el*57.3).toFixed(1)}°<br>ZOOM ${zoom.toFixed(2)}`;
  const s=Math.floor((now-t0)/1000);$("clock").textContent=new Date(s*1000).toISOString().substr(11,8)+" · "+fps+"FPS";
- {const c0=cx;cx=cx2;cx2.clearRect(0,0,W,H);drawAgents(now);cx=c0}
+ {const c0=cx;cx=cx2;cx2.clearRect(0,0,W,H);drawMind(now);drawAgents(now);cx=c0}
  drawRadar(now);
  requestAnimationFrame(draw);
 }
@@ -373,7 +377,7 @@ function setScene(s,quiet){if(s!=="auto"&&!SCENE_LIST.includes(s))return false;S
  sceneClass();
  if(SET){SET.scene=s;saveSet()}if(!quiet){shock();camShake=12}return true}
 function nextAuto(){SCENE=SCENE_LIST[(SCENE_LIST.indexOf(SCENE)+1)%SCENE_LIST.length];autoT=performance.now();sceneClass();document.body.classList.add("glitch");setTimeout(()=>document.body.classList.remove("glitch"),460)}
-function sceneClass(){const st=$("stage");st.classList.toggle("nobrain",SCENE!=="brain");st.classList.toggle("isworld",SCENE==="world");$("sceneName").textContent=SCENE==="mind"?"DEINE UNTERHALTUNG MIT CLAUDE":SCENE==="world"?"OPERATION: WORLD TAKEOVER":SCENE==="eye"?"CLAUDE IS WATCHING":SCENE.toUpperCase();st.classList.toggle("iseye",SCENE==="eye");st.classList.toggle("ismind",SCENE==="mind")}
+function sceneClass(){const st=$("stage");st.classList.toggle("nobrain",SCENE!=="brain"&&SCENE!=="mind");if(SCENE!=="mind"&&SCENE!=="brain")$("card").style.display="none";st.classList.toggle("isworld",SCENE==="world");$("sceneName").textContent=SCENE==="mind"?"DEINE UNTERHALTUNG MIT CLAUDE":SCENE==="world"?"OPERATION: WORLD TAKEOVER":SCENE==="eye"?"CLAUDE IS WATCHING":SCENE.toUpperCase();st.classList.toggle("iseye",SCENE==="eye");st.classList.toggle("ismind",SCENE==="mind")}
 const FOC=()=>Math.min(W,H)*.85;
 function p3(x,y,z,o){o.k=FOC()/z;o.sx=W/2+x*o.k+(rnd()-.5)*camShake;o.sy=H/2+y*o.k+(rnd()-.5)*camShake;o.d=z;return o}
 function drawWaves(){for(let i=waves.length-1;i>=0;i--){const w=waves[i];w.t+=.02;if(w.t>=1){waves.splice(i,1);continue}
@@ -637,9 +641,9 @@ function drawBrain(now,B,Mi,Hi,ON){
   cx.lineWidth=1;cx.strokeStyle=`rgba(${G},${.25+B*.5})`;cx.beginPath();cx.arc(hp.sx,hp.sy,R-5,0,7);cx.stroke();
   cx.strokeStyle=`rgba(${G2},${.15+Hi*.5})`;cx.beginPath();cx.arc(hp.sx,hp.sy,R+100+Mi*30,0,7);cx.stroke();
  }
- // Datei-Labels
+ // Datei-Labels (nur BRAIN)
  cx.globalCompositeOperation="source-over";cx.font="11px Consolas,Menlo,monospace";
- nodes.forEach(n=>{const p=n.p;n.sx=p.sx;n.sy=p.sy;const on=n.i===focus;if(n.i===0)return;
+ if(SCENE==="brain")nodes.forEach(n=>{const p=n.p;n.sx=p.sx;n.sy=p.sy;const on=n.i===focus;if(n.i===0)return;
   const w=cx.measureText(n.f[0]).width+10;
   cx.fillStyle=on?`rgb(${G})`:"rgba(0,0,0,.7)";cx.fillRect(p.sx,p.sy-8,w,15);
   if(!on){cx.strokeStyle=`rgba(${G},.25)`;cx.strokeRect(p.sx+.5,p.sy-7.5,w,14)}
@@ -647,7 +651,7 @@ function drawBrain(now,B,Mi,Hi,ON){
   cx.fillStyle=DIM;cx.font="9px Consolas,Menlo,monospace";cx.fillText("pos:"+((p.s*9999)|0),p.sx+5,p.sy+17);cx.font="11px Consolas,Menlo,monospace";
   if(on){cx.setLineDash([3,3]);cx.strokeStyle=`rgba(${G},.8)`;cx.beginPath();cx.moveTo(p.sx,p.sy);cx.lineTo(hp.sx,hp.sy);cx.stroke();cx.setLineDash([])}});
  const L=$("loaded");L.style.left=(hp.sx+22)+"px";L.style.top=(hp.sy-34)+"px";
- const fp=nodes[focus].p;const C=$("card");C.style.left=Math.max(8,Math.min(W-260,fp.sx-270))+"px";C.style.top=Math.max(34,Math.min(H-140,fp.sy-60))+"px";
+ const fp=SCENE==="mind"?(GR.cardNode?GR.cardNode.p:hp):nodes[focus].p;const C=$("card");C.style.left=Math.max(8,Math.min(W-260,fp.sx-270))+"px";C.style.top=Math.max(34,Math.min(H-140,fp.sy-60))+"px";
 }
 
 // ================= Steuerung: Drag / Zoom / Tap =================
@@ -666,85 +670,81 @@ stage.addEventListener("touchend",()=>pinch=0);
 function setFocus(i){focus=i;const f=FILES[i];$("cardT").textContent=f[0];$("cardR").textContent=f[1];$("cardS").textContent=f[2];$("cardL").textContent=f[3];
  $("loaded").textContent=f[0]+" / LOADED";$("sel").textContent=(i+1)+"/"+FILES.length;for(let k=0;k<8;k++)spawnPacket(nodes[i].p);shock()}
 
-// --- MIND: deine Unterhaltung mit Claude als Live-Graph (Fragen, Antworten, Themen)
-const GR={nodes:[],edges:[],sel:null,last:null,cur:null,topics:new Map(),down:null};
+// --- MIND: deine Unterhaltung mit Claude, eingebettet in die 3D-Partikelwolke.
+// Fragen, Antworten und Themen "droppen" als Labels in die Wolke (wie im Video: "… / LOADED" + Info-Karte).
+const GR={nodes:[],edges:[],sel:null,last:null,cur:null,topics:new Map(),down:null,cardNode:null,status:""};
 const STOP=new Set(("aber alle allem allen aller alles also auch auf aus bei beim bin bis bist dann damit dass dein deine dem den denen der des dich die dies diese diesem diesen dieser dir doch dort du durch ein eine einem einen einer eines einfach er es etwas euch für gibt hab habe haben hat hatte hier ich ihr ihre im in ist ja jetzt kann kannst kein keine man mehr mein meine mich mir mit muss nach nicht nichts noch nur ob oder ohne schon sehr sein seine sich sie sind so sollte über um und uns unter vom von vor war was weil wenn werden wie wieder will wir wird wo zu zum zur zwischen "+
- "about after again also and any are because been before being but can could did does doing for from have having here how into just more most not now only other our out over same should some such than that the their them then there these they this those through too under until very was were what when where which while who why will with would you your hallo hello danke bitte gerne okay klar genau sicher natürlich dabei immer eigentlich wirklich warum erklär erkläre erklären sätzen sätze satz kurz kurzen explain query transmission einem zwei drei kannst könnte würde gibt geht macht machen")
+ "about after again also and any are because been before being but can could did does doing for from have having here how into just more most not now only other our out over same should some such than that the their them then there these they this those through too under until very was were what when where which while who why will with would you your hallo hello danke bitte gerne okay klar genau sicher natürlich dabei immer kannst könnte würde gibt geht macht machen eigentlich wirklich warum erklär erkläre erklären sätzen sätze satz kurz kurzen explain query transmission zwei drei")
  .split(" "));
 function grTopics(text){const c=new Map();(text.toLowerCase().match(/[a-zäöüß][a-zäöüß0-9-]{3,}/g)||[]).forEach(w=>{if(!STOP.has(w))c.set(w,(c.get(w)||0)+1)});
  return[...c.entries()].sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length).slice(0,4).map(x=>x[0])}
-function grLabel(t){const w=String(t).replace(/\s+/g," ").trim().split(" ").filter(Boolean);return w.slice(0,6).join(" ")+(w.length>6?" …":"")}
-function grNode(type,label,text,near){const n={type,label,text,x:(near?near.x:0)+(rnd()-.5)*.25,y:(near?near.y:0)+(rnd()-.5)*.25,z:(near?near.z:0)+(rnd()-.5)*.25,vx:0,vy:0,vz:0,born:performance.now(),w:1,sx:0,sy:0,k:1,d:0};GR.nodes.push(n);return n}
+function grLabel(t,n){const w=String(t).replace(/\s+/g," ").trim().split(" ").filter(Boolean);n=n||6;return w.slice(0,n).join(" ")+(w.length>n?" …":"")}
+// Anker: jede Nachricht/jedes Thema sitzt auf einem echten Partikel der Wolke
+const GR_RANGE={you:[1100,2500],claude:[0,1100],err:[0,1100],topic:[2500,3700]};
+function grAnchor(type){const[a,b]=GR_RANGE[type]||[0,P.length];let best=null,bd=-1;
+ for(let k=0;k<12;k++){const p=P[a+((rnd()*(b-a))|0)];let md=9;GR.nodes.forEach(n=>{md=Math.min(md,Math.hypot(n.p.x-p.x,n.p.y-p.y,n.p.z-p.z))});if(md>bd){bd=md;best=p}}return best}
+function grNode(type,label,text){const n={type,label,text,p:grAnchor(type),born:performance.now(),w:1,sx:0,sy:0};GR.nodes.push(n);
+ shock();for(let k=0;k<6;k++)spawnPacket(n.p);if(type!=="topic")mindCard(n);return n}
 function grEdge(a,b,kind){if(!GR.edges.some(e=>e.a===a&&e.b===b))GR.edges.push({a,b,kind})}
-function grTopicLink(msg,text){grTopics(text).forEach(w=>{let t=GR.topics.get(w);if(!t){t=grNode("topic",w,"",msg);GR.topics.set(w,t)}else if(!GR.edges.some(e=>e.a===msg&&e.b===t))t.w++;grEdge(msg,t,"topic")})}
-function grUser(q){const n=grNode("you",grLabel(q),q,GR.last);if(GR.last)grEdge(GR.last,n,"chain");GR.last=n;grTopicLink(n,q);return n}
-function grStart(){const n=grNode("claude","denkt nach …","",GR.last);if(GR.last)grEdge(GR.last,n,"chain");GR.cur=n;GR.last=n;return n}
-function grStream(t){const n=GR.cur;if(!n)return;n.text=t;n.label=grLabel(t)||"…";if((n._tc=(n._tc||0)+1)%12===0)grTopicLink(n,t)}
-function grDone(t,ok){const n=GR.cur;if(!n)return;if(ok){n.text=t;n.label=grLabel(t)||"(leer)";grTopicLink(n,t)}else{n.type="err";n.label="Fehler";n.text=t}GR.cur=null;if(GR.sel===n)grShow(n)}
-function grClear(){GR.nodes.length=0;GR.edges.length=0;GR.topics.clear();GR.last=GR.cur=GR.sel=null;$("ncard").style.display="none"}
+function grTopicLink(msg,text){grTopics(text).forEach(w=>{let t=GR.topics.get(w);if(!t){t=grNode("topic",w,"");GR.topics.set(w,t)}else if(!GR.edges.some(e=>e.a===msg&&e.b===t)){t.w++;t.born=performance.now()-300}grEdge(msg,t,"topic")})}
+function grUser(q){const n=grNode("you",grLabel(q),q);if(GR.last)grEdge(GR.last,n,"chain");GR.last=n;grTopicLink(n,q);return n}
+function grStart(){const n=grNode("claude","denkt nach …","");if(GR.last)grEdge(GR.last,n,"chain");GR.cur=n;GR.last=n;return n}
+function grStream(t){const n=GR.cur;if(!n)return;n.text=t;n.label=grLabel(t)||"…";if((n._tc=(n._tc||0)+1)%12===0)grTopicLink(n,t);if(GR.cardNode===n)mindCard(n,true)}
+function grDone(t,ok){const n=GR.cur;if(!n)return;if(ok){n.text=t;n.label=grLabel(t)||"(leer)";grTopicLink(n,t)}else{n.type="err";n.label="Fehler";n.text=t}GR.cur=null;mindCard(n,true);if(GR.sel===n)grShow(n)}
+function grClear(){GR.nodes.length=0;GR.edges.length=0;GR.topics.clear();GR.last=GR.cur=GR.sel=GR.cardNode=null;$("ncard").style.display="none";$("card").style.display="none"}
+// Info-Karte wie im Video (Titel · ROLLE · QUELLE · GELADEN), droppt bei jeder neuen Nachricht rein
+function mindCard(n,update){if(SCENE!=="mind")return;const C=$("card");GR.cardNode=n;
+ $("cardT").textContent=n.type==="you"?"DU · FRAGE":n.type==="err"?"FEHLER":"CLAUDE · ANTWORT";
+ $("cardR").textContent=n.type==="you"?"Deine Nachricht an Claude":n.type==="err"?"Anfrage fehlgeschlagen":(n===GR.cur?"Claude schreibt gerade …":"Claudes Antwort");
+ $("cardS").textContent=grLabel(n.text||"…",14);$("cardL").textContent=new Date().toLocaleTimeString("de")+(n.type==="claude"&&n===GR.cur?" · live":"");
+ C.style.display="block";if(!update){C.classList.remove("drop");void C.offsetWidth;C.classList.add("drop")}}
 function grShow(n){const c=$("ncard");if(!n){c.style.display="none";return}
  const who=n.type==="you"?"DU":n.type==="claude"?"CLAUDE":n.type==="err"?"FEHLER":"THEMA";
  const rel=n.type==="topic"?GR.edges.filter(e=>e.b===n).map(e=>"• "+(e.a.type==="you"?"Du: ":"Claude: ")+grLabel(e.a.text)).join("\n"):"";
- c.innerHTML="";const h=document.createElement("h4");h.textContent=who+(n.type==="topic"?" · "+n.label:"");const b=document.createElement("div");
+ c.innerHTML="";const h=document.createElement("h4");h.textContent=who+(n.type==="topic"?" · #"+n.label:"");const b=document.createElement("div");
  b.textContent=n.type==="topic"?"Kommt vor in:\n"+rel:(n.text||"…");const x=document.createElement("div");x.className="k";x.textContent="Klick daneben = schließen";c.append(h,b,x);c.style.display="block"}
 stage.addEventListener("pointerdown",e=>{GR.down=[e.clientX,e.clientY]});
 stage.addEventListener("pointerup",e=>{if(SCENE!=="mind"||!GR.down)return;if(Math.hypot(e.clientX-GR.down[0],e.clientY-GR.down[1])>6)return;
- const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;let best=null,bd=34;
- GR.nodes.forEach(n=>{const d=Math.hypot(n.sx-x,n.sy-y);if(d<bd){bd=d;best=n}});GR.sel=best;grShow(best)});
-function grPhysics(){const N=GR.nodes,L=N.length;
- for(let i=0;i<L;i++){const a=N[i];for(let j=i+1;j<L;j++){const b=N[j];const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z,d2=dx*dx+dy*dy+dz*dz+.004,f=.0011/d2;
-  a.vx+=dx*f;a.vy+=dy*f;a.vz+=dz*f;b.vx-=dx*f;b.vy-=dy*f;b.vz-=dz*f}}
- for(const e of GR.edges){const a=e.a,b=e.b,len=e.kind==="chain"?.34:.24;let dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z;const d=Math.sqrt(dx*dx+dy*dy+dz*dz)+1e-4,f=(d-len)*.025/d;
-  dx*=f;dy*=f;dz*=f;a.vx+=dx;a.vy+=dy;a.vz+=dz;b.vx-=dx;b.vy-=dy;b.vz-=dz}
- let mx=0,my=0,mz=0;N.forEach(n=>{mx+=n.x;my+=n.y;mz+=n.z});mx/=L||1;my/=L||1;mz/=L||1;
- N.forEach(n=>{n.vx=(n.vx-n.x*.004)*.86;n.vy=(n.vy-n.y*.004)*.86;n.vz=(n.vz-n.z*.004)*.86;n.x+=n.vx-mx*.05;n.y+=n.vy-my*.05;n.z+=n.vz-mz*.05})}
-const GCOL={you:"235,235,235",topic:null,claude:null,err:"255,70,70"};
-SCENES.mind=(now,B,Mi,Hi,ON)=>{
- cx.globalCompositeOperation="source-over";cx.fillStyle=BG;cx.fillRect(0,0,W,H);
- for(const s of stars){cx.fillStyle=`rgba(${G},${.12+.15*s.s})`;cx.fillRect(s.x*W*.5+W*.5,(s.y*.5+.5)*H,1,1)}
- const N=GR.nodes,cxm=W/2,cym=H/2;
- if(!drag)az+=.0012+B*.004;
- if(!N.length){ // leerer Zustand: erklären, was hier passiert
-  const r=60+Math.sin(now/400)*6+B*30;cx.globalCompositeOperation="lighter";cx.drawImage(SPRW,cxm-r*1.6,cym-r*1.6-30,r*3.2,r*3.2);
-  cx.strokeStyle=`rgba(${G},.6)`;cx.lineWidth=1.5;cx.beginPath();cx.arc(cxm,cym-30,r*.7,now/700,now/700+4.5);cx.stroke();
-  cx.globalCompositeOperation="source-over";cx.textAlign="center";cx.fillStyle=FG;cx.font="bold 20px Consolas,Menlo,monospace";cx.fillText("CLAUDE",cxm,cym-24);
-  cx.font="15px Consolas,Menlo,monospace";cx.fillStyle=FG;cx.fillText("Stell Claude unten eine Frage.",cxm,cym+70);
-  cx.fillStyle=DIM;cx.font="13px Consolas,Menlo,monospace";cx.fillText("Eure Unterhaltung wird hier live als Graph aufgebaut: Fragen, Antworten und die Themen darin.",cxm,cym+94);
-  cx.textAlign="start";$("hud2").innerHTML="MIND · LEER";return}
- grPhysics();
- // Ausdehnung → passend skalieren
- let mr=.3;N.forEach(n=>{mr=Math.max(mr,Math.hypot(n.x,n.y,n.z))});const S=Math.min(W,H)*.42/mr*zoom;
- const ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el*.6),se=Math.sin(el*.6);
- N.forEach(n=>{const x=n.x*ca-n.z*sa,z1=n.x*sa+n.z*ca,y=n.y*ce-z1*se,z=n.y*se+z1*ce;const k=2.4/(2.4+z/mr);n.sx=cxm+x*S*k;n.sy=cym+y*S*k;n.k=k;n.d=z/mr});
- const C2=G2,C1=G;GCOL.topic=C2;GCOL.claude=C1;
- // Kanten
- cx.lineWidth=1;
- for(const e of GR.edges){if(e.kind==="chain"){cx.strokeStyle=`rgba(${C1},.75)`;cx.lineWidth=2;cx.setLineDash([])}else{cx.strokeStyle=`rgba(${C2},.35)`;cx.lineWidth=1;cx.setLineDash([3,5])}
-  cx.beginPath();cx.moveTo(e.a.sx,e.a.sy);cx.lineTo(e.b.sx,e.b.sy);cx.stroke()}cx.setLineDash([]);
- // Datenfluss zur aktuellen Antwort
- if(GR.cur){const e=GR.edges.find(e=>e.b===GR.cur&&e.kind==="chain");if(e)for(let i=0;i<3;i++){const t=((now/600)+i/3)%1,x=e.a.sx+(e.b.sx-e.a.sx)*t,y=e.a.sy+(e.b.sy-e.a.sy)*t;
-  cx.globalCompositeOperation="lighter";cx.drawImage(SPR1,x-8,y-8,16,16);cx.globalCompositeOperation="source-over"}}
- // Knoten (hinten zuerst)
- const order=[...N].sort((a,b)=>b.d-a.d);
- for(const n of order){const col=GCOL[n.type],fade=Math.max(.35,Math.min(1,.8-n.d*.4)),age=Math.min(1,(now-n.born)/400);
-  const r=(n.type==="topic"?4+Math.min(8,n.w*1.6):n.type==="claude"?9:7)*n.k*age*(n===GR.cur?1+.25*Math.sin(now/120):1);
-  cx.globalCompositeOperation="lighter";cx.globalAlpha=fade*.8;cx.drawImage(n.type==="topic"?SPR2:SPR1,n.sx-r*3,n.sy-r*3,r*6,r*6);cx.globalAlpha=1;cx.globalCompositeOperation="source-over";
-  cx.fillStyle=`rgba(${col},${fade})`;cx.beginPath();cx.arc(n.sx,n.sy,r,0,7);cx.fill();
-  if(n===GR.sel){cx.strokeStyle="#fff";cx.lineWidth=1.5;cx.beginPath();cx.arc(n.sx,n.sy,r+6,0,7);cx.stroke()}}
- // Beschriftungen (gut lesbar: dunkler Kasten, große Schrift)
- for(const n of order){const fade=Math.max(.45,Math.min(1,.85-n.d*.4));
-  if(n.type==="topic"){cx.font="12px Consolas,Menlo,monospace";const t="#"+n.label,w=cx.measureText(t).width+8;cx.fillStyle=`rgba(0,0,0,${.7*fade})`;cx.fillRect(n.sx+8,n.sy-8,w,16);
-   cx.fillStyle=`rgba(${C2},${fade})`;cx.fillText(t,n.sx+12,n.sy+4);continue}
-  cx.font="bold 13px Consolas,Menlo,monospace";const who=n.type==="you"?"DU ›":n.type==="err"?"FEHLER ›":"CLAUDE ›";const t=n.label;
-  cx.font="13px Consolas,Menlo,monospace";const w1=cx.measureText(who+" ").width,w=Math.min(380,w1+cx.measureText(t).width+14);
-  cx.fillStyle=`rgba(0,0,0,${.82*fade})`;cx.fillRect(n.sx+12,n.sy-11,w,22);cx.fillStyle=`rgba(${GCOL[n.type]},${fade})`;cx.fillRect(n.sx+12,n.sy-11,3,22);
-  cx.font="bold 13px Consolas,Menlo,monospace";cx.fillText(who,n.sx+20,n.sy+5);cx.font="13px Consolas,Menlo,monospace";cx.fillStyle=`rgba(${n.type==="you"?"235,235,235":FG.startsWith("#")?"230,200,170":FG},${fade})`;
-  cx.save();cx.beginPath();cx.rect(n.sx+12,n.sy-11,w-4,22);cx.clip();cx.fillStyle=n.type==="you"?`rgba(235,235,235,${fade})`:FG;cx.globalAlpha=fade;cx.fillText(t,n.sx+20+w1,n.sy+5);cx.restore();cx.globalAlpha=1}
+ const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;let best=null,bd=40;
+ GR.nodes.forEach(n=>{const d=Math.min(Math.hypot(n.sx-x,n.sy-y),Math.hypot(n.lx-x,n.ly-y));if(d<bd){bd=d;best=n}});GR.sel=best;grShow(best)});
+// 3D-Wolke = die bekannte Partikel-Szene; Inhalte kommen auf der scharfen Overlay-Ebene dazu
+SCENES.mind=(now,B,Mi,Hi,ON)=>drawBrain(now,B,Mi,Hi,ON);
+const bounce=t=>{const n=7.5625,d=2.75;if(t<1/d)return n*t*t;if(t<2/d)return n*(t-=1.5/d)*t+.75;if(t<2.5/d)return n*(t-=2.25/d)*t+.9375;return n*(t-=2.625/d)*t+.984375};
+function drawMind(now){
+ if(SCENE!=="mind")return;const N=GR.nodes;
+ // Status am Kern ("CLAUDE / …" wie "CLAUDE.md / LOADED" im Video)
+ const st=busy?(AG.phase==="write"?"CLAUDE / SCHREIBT":"CLAUDE / DENKT NACH"):N.length?"CLAUDE / BEREIT":"CLAUDE / WARTET";
+ if(st!==GR.status){GR.status=st;const L=$("loaded");L.textContent=st;L.classList.remove("drop");void L.offsetWidth;L.classList.add("drop")}
+ if(!N.length){$("card").style.display="none";cx.textAlign="center";cx.font="15px Consolas,Menlo,monospace";cx.fillStyle="#fff";cx.fillText("Stell Claude unten eine Frage.",W/2,H-70);
+  cx.font="13px Consolas,Menlo,monospace";cx.fillStyle=FG;cx.fillText("Fragen, Antworten und Themen droppen dann hier in die 3D-Wolke.",W/2,H-48);cx.textAlign="start";$("hud2").innerHTML="MIND · LEER";return}
+ // Verbindungen
+ for(const e of GR.edges){const a=e.a.p,b=e.b.p;if(e.kind==="chain"){cx.strokeStyle=`rgba(${G},.85)`;cx.lineWidth=2;cx.setLineDash([])}else{cx.strokeStyle=`rgba(${G2},.45)`;cx.lineWidth=1;cx.setLineDash([3,5])}
+  cx.beginPath();cx.moveTo(a.sx,a.sy);cx.lineTo(b.sx,b.sy);cx.stroke()}cx.setLineDash([]);
+ if(GR.cur){cx.setLineDash([6,6]);cx.lineDashOffset=-now/30;cx.strokeStyle=`rgba(${G},.9)`;cx.lineWidth=1.5;cx.beginPath();cx.moveTo(hp.sx,hp.sy);cx.lineTo(GR.cur.p.sx,GR.cur.p.sy);cx.stroke();cx.setLineDash([])}
+ // Labels droppen rein (fallen von oben, Bounce, dann "/ LOADED"-Blitz)
+ const order=[...N].sort((a,b)=>b.p.d-a.p.d);
+ for(const n of order){const p=n.p,t=Math.min(1,(now-n.born)/700),fall=(1-bounce(t))*-90,al=Math.min(1,t*2.5)*Math.max(.45,Math.min(1,1.15-p.d*.5));
+  n.sx=p.sx;n.sy=p.sy;const isNew=now-n.born<1600,isLast=n===GR.last,topic=n.type==="topic";
+  // Marker am Partikel
+  const m=topic?6:9;cx.strokeStyle=`rgba(${topic?G2:G},${al})`;cx.lineWidth=1.5;cx.strokeRect(p.sx-m/2,p.sy-m/2,m,m);
+  if(isNew){const k=(now-n.born)/1600;cx.strokeStyle=`rgba(255,255,255,${(1-k)*.9})`;cx.beginPath();cx.arc(p.sx,p.sy,6+k*40,0,7);cx.stroke()}
+  // Label-Kasten
+  const lx=p.sx+16,ly=p.sy-18+fall;n.lx=lx+40;n.ly=ly;
+  cx.strokeStyle=`rgba(${topic?G2:G},${.6*al})`;cx.lineWidth=1;cx.beginPath();cx.moveTo(p.sx+m/2,p.sy-m/2);cx.lineTo(lx,ly+6);cx.stroke();
+  const head=topic?"#"+n.label:(n.type==="you"?"DU › ":n.type==="err"?"FEHLER › ":"CLAUDE › ")+n.label,tag=isNew?(topic?" / LOADED":" / NEU"):"";
+  cx.font=(topic?"12px ":"bold 13px ")+"Consolas,Menlo,monospace";const tw=Math.min(topic?260:420,cx.measureText(head).width)+12;cx.font="bold 11px Consolas,Menlo,monospace";const gw=tag?cx.measureText(tag).width+8:0;
+  const hl=isLast&&!topic,bg=hl?`rgba(${G},${al})`:`rgba(0,0,0,${.82*al})`;
+  cx.fillStyle=bg;cx.fillRect(lx,ly-2,tw,18);if(!hl){cx.strokeStyle=`rgba(${topic?G2:G},${.5*al})`;cx.strokeRect(lx+.5,ly-1.5,tw,18)}
+  cx.save();cx.beginPath();cx.rect(lx,ly-2,tw,18);cx.clip();cx.font=(topic?"12px ":"bold 13px ")+"Consolas,Menlo,monospace";
+  cx.fillStyle=hl?`rgba(0,0,0,${al})`:topic?`rgba(${G2},${al})`:n.type==="you"?`rgba(255,255,255,${al})`:`rgba(${G},${al})`;cx.fillText(head,lx+6,ly+11);cx.restore();
+  if(tag){const k=1-(now-n.born)/1600;cx.fillStyle=`rgba(${topic?G2:G},${k})`;cx.fillRect(lx+tw+4,ly-2,gw,18);cx.fillStyle=`rgba(0,0,0,${k})`;cx.font="bold 11px Consolas,Menlo,monospace";cx.fillText(tag.trim(),lx+tw+8,ly+11)}
+  if(!topic){cx.font="10px Consolas,Menlo,monospace";cx.fillStyle=`rgba(${G},${.55*al})`;cx.fillText("pos:"+((p.s*9999)|0)+" · "+(n.type==="you"?"input":"output"),lx+2,ly+28)}
+  if(n===GR.sel){cx.strokeStyle="#fff";cx.lineWidth=1.5;cx.strokeRect(lx-3,ly-5,tw+6,24)}}
  // Legende
- cx.font="12px Consolas,Menlo,monospace";let lx=14;const ly=H-34;[["235,235,235","Du"],[C1,"Claude"],[C2,"Themen"]].forEach(([c,l])=>{cx.fillStyle=`rgb(${c})`;cx.beginPath();cx.arc(lx+5,ly-4,5,0,7);cx.fill();cx.fillStyle=FG;cx.fillText(l,lx+14,ly);lx+=cx.measureText(l).width+34});
- cx.fillStyle=DIM;cx.fillText("Knoten anklicken = ganzer Text · Ziehen = drehen · Mausrad = zoomen",lx+6,ly);
- const msgs=N.filter(n=>n.type!=="topic").length;$("hud2").innerHTML=`MIND · ${msgs} NACHRICHTEN<br>${GR.topics.size} THEMEN`;
-};
+ cx.font="12px Consolas,Menlo,monospace";let x=14;const y=H-30;[["255,255,255","Du"],[G,"Claude"],[G2,"Themen"]].forEach(([c,l])=>{cx.fillStyle=`rgb(${c})`;cx.fillRect(x,y-9,9,9);cx.fillStyle=FG;cx.fillText(l,x+14,y);x+=cx.measureText(l).width+32});
+ cx.fillStyle=DIM;cx.fillText("Label anklicken = ganzer Text · ziehen = drehen · Mausrad = zoomen",x+6,y);
+ const msgs=N.filter(n=>n.type!=="topic").length;$("hud2").innerHTML=`MIND · ${msgs} NACHRICHTEN<br>${GR.topics.size} THEMEN · ${(STATS.inTok+STATS.outTok).toLocaleString("de")} TOKENS`;
+}
 
 // ================= Radar =================
 const rc=$("rc"),rx=rc.getContext("2d");let RW,RH;
