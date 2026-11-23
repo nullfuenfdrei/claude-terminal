@@ -29,12 +29,9 @@ class MainForm : Form
         try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
         Controls.Add(web);
         KeyPreview = true;
-        KeyDown += (_, e) =>
-        {
-            if (e.KeyCode == Keys.F11) ToggleFullscreen();
-            if (e.KeyCode == Keys.Escape && FormBorderStyle == FormBorderStyle.None) ToggleFullscreen();
-        };
-        Load += async (_, _) => await InitAsync();
+        KeyDown += (_, e) => { if (e.KeyCode == Keys.F11) ToggleFullscreen(); };
+        // Start direkt im Vollbild (F11 schaltet um)
+        Load += async (_, _) => { ToggleFullscreen(); await InitAsync(); };
     }
 
     protected override void OnHandleCreated(EventArgs e)
@@ -45,8 +42,11 @@ class MainForm : Form
     }
 
     FormWindowState prevState;
+    long lastToggle;
     void ToggleFullscreen()
     {
+        if (Environment.TickCount64 - lastToggle < 300) return; // F11 kann doppelt ankommen (Form + WebView)
+        lastToggle = Environment.TickCount64;
         if (FormBorderStyle == FormBorderStyle.None)
         { FormBorderStyle = FormBorderStyle.Sizable; WindowState = prevState; }
         else
@@ -76,6 +76,9 @@ class MainForm : Form
             if (Uri.TryCreate(e.Uri, UriKind.Absolute, out var u) && (u.Scheme == "https" || u.Scheme == "http"))
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(u.ToString()) { UseShellExecute = true });
         };
+        // F11 auch dann, wenn die Seite den Fokus hat
+        cw.Settings.AreBrowserAcceleratorKeysEnabled = true;
+        web.KeyDown += (_, e) => { if (e.KeyCode == Keys.F11) ToggleFullscreen(); };
         // Abo-Modus: Nachrichten der Seite an Claude Code weiterreichen
         cw.WebMessageReceived += (_, e) =>
         {
@@ -89,6 +92,9 @@ class MainForm : Form
             }
             catch { }
         };
+        // Große Bildschirme: alles größer und besser lesbar
+        var sw = Screen.FromControl(this).Bounds.Width;
+        web.ZoomFactor = sw >= 3200 ? 1.6 : sw >= 2400 ? 1.3 : sw >= 1900 ? 1.1 : 1.0;
         cw.Navigate("https://claude-terminal.app/index.html");
 
         // PC-Sound abgreifen und ~60x pro Sekunde an die Grafik schicken

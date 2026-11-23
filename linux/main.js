@@ -21,6 +21,7 @@ function createWindow() {
     title: "Claude Terminal",
     icon: path.join(__dirname, "icon.png"),
     autoHideMenuBar: true,
+    fullscreen: true, // Start im Vollbild (F11 schaltet um)
     webPreferences: { preload: path.join(__dirname, "preload.js") },
   });
   win.setMenu(null);
@@ -34,6 +35,9 @@ function createWindow() {
     if (/^https?:\/\//.test(url)) shell.openExternal(url);
     return { action: "deny" };
   });
+  // Große Bildschirme: alles größer und besser lesbar
+  const sw = require("electron").screen.getPrimaryDisplay().size.width;
+  win.webContents.on("did-finish-load", () => win.webContents.setZoomFactor(sw >= 3200 ? 1.6 : sw >= 2400 ? 1.3 : sw >= 1900 ? 1.1 : 1));
   win.loadURL("app://claude-terminal/index.html");
 }
 
