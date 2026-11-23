@@ -22,7 +22,7 @@ class MainForm : Form
 
     public MainForm()
     {
-        Text = "Claude Code Terminal";
+        Text = "Claude Terminal";
         BackColor = Color.Black;
         Width = 1400; Height = 900;
         StartPosition = FormStartPosition.CenterScreen;
@@ -69,6 +69,13 @@ class MainForm : Form
         cw.Settings.IsStatusBarEnabled = false;
         cw.Settings.AreDevToolsEnabled = false;
         cw.SetVirtualHostNameToFolderMapping("claude-terminal.app", webDir, CoreWebView2HostResourceAccessKind.Allow);
+        // Links (z. B. "console.anthropic.com") im normalen Browser öffnen statt in einem Popup
+        cw.NewWindowRequested += (_, e) =>
+        {
+            e.Handled = true;
+            if (Uri.TryCreate(e.Uri, UriKind.Absolute, out var u) && (u.Scheme == "https" || u.Scheme == "http"))
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(u.ToString()) { UseShellExecute = true });
+        };
         cw.Navigate("https://claude-terminal.app/index.html");
 
         // PC-Sound abgreifen und ~60x pro Sekunde an die Grafik schicken

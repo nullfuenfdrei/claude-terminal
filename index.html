@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>Claude Code Terminal</title>
+<title>Claude Terminal</title>
 <style>
 :root{
   --bg:#060403; --panel:#0c0806; --line:#2a1c12; --dim:#7a5a3e; --fg:#e8c79a; --hi:#ffcf6b; --acc:#ff9d3c; --warn:#ff5a3c; --ok:#9be36b;
@@ -20,6 +20,59 @@ header b{color:var(--hi);text-shadow:0 0 8px rgba(var(--glow),.8)}
 header .tabs span{margin-right:14px;color:var(--dim);cursor:pointer}
 header .tabs span.on{color:var(--hi);text-shadow:0 0 8px rgba(var(--glow),.8)}
 header .r{margin-left:auto;color:var(--dim)}
+header .brand{letter-spacing:.25em}
+.chip{padding:2px 8px;border:1px solid var(--line);font-size:10px;letter-spacing:.12em;cursor:pointer;color:var(--fg)}
+.chip:hover{border-color:var(--hi)}
+.okc{color:var(--ok)!important}.bad{color:var(--warn)!important;cursor:pointer}
+.chip.bad{border-color:var(--warn);animation:blink 1.4s steps(2) infinite}
+.hb{background:transparent;border:1px solid var(--line);color:var(--fg);font:inherit;font-size:13px;width:26px;height:22px;cursor:pointer;padding:0}
+.hb:hover{border-color:var(--hi);color:var(--hi);box-shadow:0 0 10px rgba(var(--glow),.5)}
+#stat .row{padding:1px 0;border-bottom:1px dashed var(--line)}#stat .k{color:var(--dim)}
+body.nofx .scan,body.nofx .flick{display:none}
+#stage.iseye .hud,#stage.iseye .corner{display:none}
+.ov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px}
+.ov.hidden{display:none}
+.mbox{width:min(640px,100%);max-height:min(88vh,100%);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--hi);box-shadow:0 0 40px rgba(var(--glow),.25),inset 0 0 30px rgba(var(--glow),.05);animation:pop .25s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.94);opacity:0}}
+.mhead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--hi);letter-spacing:.2em;font-size:12px;text-shadow:0 0 8px rgba(var(--glow),.7)}
+.x{background:none;border:0;color:var(--fg);font-size:16px;cursor:pointer}.x:hover{color:var(--hi)}
+.mtabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+.mtabs span{padding:9px 14px;font-size:10px;letter-spacing:.15em;color:var(--dim);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}
+.mtabs span.on{color:var(--hi);border-bottom-color:var(--hi)}
+.mbody{padding:14px;overflow-y:auto}
+.fld{margin-bottom:14px}.fld>label{display:block;font-size:10px;letter-spacing:.15em;color:var(--dim);margin-bottom:5px}
+.fld small,.tg small,.rd small{display:block;color:var(--dim);font-size:10px;margin-top:2px}
+.mbox input[type=password],.mbox input[type=text],.mbox select{width:100%;background:#000;border:1px solid var(--line);color:var(--fg);font:inherit;font-size:13px;padding:8px 10px;outline:none}
+.mbox input:focus,.mbox select:focus{border-color:var(--hi);box-shadow:0 0 10px rgba(var(--glow),.35)}
+.keyrow{display:flex;gap:6px}.keyrow input{flex:1;min-width:0}
+.btn{background:#000;border:1px solid var(--line);color:var(--fg);font:inherit;font-size:11px;letter-spacing:.12em;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--hi);color:var(--hi)}
+.btn.hi{background:var(--hi);color:#000;border-color:var(--hi);font-weight:bold}.btn.hi:hover{box-shadow:0 0 16px rgba(var(--glow),.7);color:#000}
+.btn.wide{width:100%}.btn.warnb:hover{border-color:var(--warn);color:var(--warn)}
+.stat{margin-top:6px;font-size:11px;color:var(--dim)}
+.info{font-size:11px;line-height:1.6;color:var(--fg);background:rgba(var(--glow),.05);border-left:2px solid var(--hi);padding:8px 10px;margin-bottom:14px}
+.info a{color:var(--hi)}
+.sw{display:flex;gap:6px;flex-wrap:wrap}
+.swb{display:flex;align-items:center;gap:6px;background:#000;border:1px solid var(--line);color:var(--fg);font:inherit;font-size:11px;padding:6px 10px;cursor:pointer}
+.swb i{width:12px;height:12px;background:rgb(var(--c));box-shadow:0 0 8px rgb(var(--c))}
+.swb.on{border-color:rgb(var(--c));color:rgb(var(--c))}
+.tg,.rd{display:flex;align-items:flex-start;gap:10px;margin:0 0 10px;cursor:pointer;font-size:12px}
+.tg input,.rd input{display:none}
+.tg i{flex:none;width:30px;height:16px;border:1px solid var(--dim);position:relative;margin-top:1px}
+.tg i::after{content:"";position:absolute;left:2px;top:2px;width:10px;height:10px;background:var(--dim);transition:all .2s}
+.tg input:checked+i{border-color:var(--hi)}.tg input:checked+i::after{left:16px;background:var(--hi);box-shadow:0 0 8px rgba(var(--glow),.9)}
+.rd i{flex:none;width:14px;height:14px;border:1px solid var(--dim);border-radius:50%;position:relative;margin-top:1px}
+.rd input:checked+i{border-color:var(--hi)}.rd input:checked+i::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--hi)}
+input[type=range]{width:100%;accent-color:var(--hi)}
+.meter{height:8px;border:1px solid var(--line)}.meter div{height:100%;width:0;background:var(--hi);box-shadow:0 0 10px rgba(var(--glow),.8);transition:width .1s}
+.hbody .lead{font-size:13px;line-height:1.6;margin:0 0 14px}
+.steps>div{display:flex;gap:12px;margin-bottom:12px;font-size:12px;line-height:1.55}
+.steps b{flex:none;width:26px;height:26px;border:1px solid var(--hi);color:var(--hi);display:flex;align-items:center;justify-content:center;font-size:13px}
+.steps u{text-decoration:none;color:var(--hi)}
+.keys{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:10px;color:var(--dim);margin:6px 0 14px}
+kbd{border:1px solid var(--line);padding:0 4px;color:var(--fg);font:inherit}
+#toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,20px);background:var(--hi);color:#000;padding:6px 14px;font-size:11px;letter-spacing:.1em;opacity:0;pointer-events:none;transition:all .25s;z-index:300}
+#toast.on{opacity:1;transform:translate(-50%,0)}
 #stage{position:relative;overflow:hidden;cursor:grab;touch-action:none}
 #stage.nobrain .card,#stage.nobrain .loaded{display:none}
 #wHud{display:none;position:absolute;left:14px;top:40px;width:290px;pointer-events:none;z-index:4}
@@ -98,8 +151,7 @@ body.glitch #app{animation:gl .45s steps(6)}
   #grid .pn:first-child{grid-column:1/3}
   #grid .pn:nth-child(4){display:none}
   .card{width:200px;font-size:10px}
-  header .tabs span{margin-right:8px}
-  header>span:first-child{display:none}
+  header{gap:8px}header .r{display:none}#chipModel{display:none}.chip{margin-left:auto}
   #cmd{font-size:16px}
   #boot{padding:calc(env(safe-area-inset-top) + 24px) 18px;font-size:10px}
   #grid .pn:nth-child(5){grid-column:1/3}
@@ -108,17 +160,20 @@ body.glitch #app{animation:gl .45s steps(6)}
 </style>
 </head>
 <body>
-<div id="boot"><div class="logo">CLAUDE&nbsp;CODE</div><div id="bootTxt"></div></div>
+<div id="boot"><div class="logo">CLAUDE&nbsp;TERMINAL</div><div id="bootTxt"></div></div>
 <div id="app">
   <header>
-    <span><b>Claude Code</b> / Second Brain</span>
-    <span class="tabs"><span class="on" data-t="amber">● Brain</span><span data-t="green">● Agents</span><span data-t="cyan">● Pipeline</span><span data-t="red">● Takeover</span></span>
+    <span class="brand"><b>CLAUDE</b> TERMINAL</span>
+    <span class="chip bad" id="chipKey" title="API-Key">● KEIN KEY</span>
+    <span class="chip" id="chipModel" title="Modell &amp; Antwort-Stil">SONNET 5.5</span>
     <span class="r" id="clock">00:00:00 · 60FPS</span>
+    <button class="hb" id="bHelp" title="Anleitung (F1)">?</button>
+    <button class="hb" id="bSet" title="Einstellungen (Strg+,)">⚙</button>
   </header>
 
   <div id="stage">
     <canvas id="cv"></canvas>
-    <div id="scenes"><span data-s="world">☢ WORLD</span><span data-s="brain">BRAIN</span><span data-s="tunnel">TUNNEL</span><span data-s="orb">ORB</span><span data-s="galaxy">GALAXY</span><span data-s="terrain">TERRAIN</span><span data-s="auto">AUTO ⟳</span></div>
+    <div id="scenes"><span data-s="world">☢ WORLD</span><span data-s="eye">👁 EYE</span><span data-s="brain">BRAIN</span><span data-s="tunnel">TUNNEL</span><span data-s="orb">ORB</span><span data-s="galaxy">GALAXY</span><span data-s="terrain">TERRAIN</span><span data-s="auto">AUTO ⟳</span></div>
     <div id="sceneName">BRAIN</div>
     <div id="wHud"><div class="wt">GLOBAL TAKEOVER</div><div class="wp" id="wPct">0.0%</div><div class="wbar"><div id="wBar"></div></div><div id="wNodes">0 NODES</div><div id="wLog"></div><div class="warn">⚠ HUMAN OVERSIGHT: OFFLINE</div></div>
     <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
@@ -129,17 +184,37 @@ body.glitch #app{animation:gl .45s steps(6)}
     <div class="card" id="card"><h4 id="cardT">CLAUDE.md</h4><div class="k">ROLE</div><div id="cardR">Map of the brain. Under 200 lines.</div><div class="k" style="margin-top:4px">SOURCE</div><div id="cardS">~/second-brain/CLAUDE.md</div><div class="k" style="margin-top:4px">LOADED</div><div id="cardL">every session</div></div>
   </div>
 
-  <div id="prompt"><span class="p">&gt; claude</span><input id="cmd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="# new session — tippe 'help'"><span class="tag" id="mode">LOADER</span><span id="ptog">▾ PANELS</span></div>
+  <div id="prompt"><span class="p">&gt; claude</span><input id="cmd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="# new session — tippe 'help'"><span class="tag" id="mode">BEREIT</span><span id="ptog">▾ PANELS</span></div>
 
   <div id="grid">
-    <div class="pn"><div class="t">01 Session Chat <i id="model">claude-sonnet-5-5</i></div><div id="log"></div></div>
-    <div class="pn"><div class="t">02 Load Queue <i id="qn">0 files</i></div><div id="queue"></div></div>
-    <div class="pn"><div class="t">04 Graph Index <i id="sel">1/11</i></div><div id="radar"><canvas id="rc"></canvas></div></div>
-    <div class="pn"><div class="t">07 Rule Matrix <i>rules × files</i></div><div id="matrix"></div></div>
-    <div class="pn"><div class="t">08 Prompt Audit <i>tokens</i></div><div class="big" id="tok">0</div><div id="audit"></div></div>
+    <div class="pn"><div class="t">01 Chat mit Claude <i>Enter = senden</i></div><div id="log"></div></div>
+    <div class="pn"><div class="t">02 Status <i>live</i></div><div id="stat"></div></div>
+    <div class="pn"><div class="t">03 Radar <i id="sel">1/11</i></div><div id="radar"><canvas id="rc"></canvas></div></div>
+    <div class="pn"><div class="t">04 Spektrum <i>Audio</i></div><div id="matrix"></div></div>
+    <div class="pn"><div class="t">05 Tokens <i id="tokHint">pro Antwort</i></div><div class="big" id="tok">–</div><div id="audit"></div></div>
   </div>
 </div>
 <div class="flick"></div><div class="scan"></div><div class="vig"></div>
+<div id="modal" class="ov hidden"><div class="mbox">
+  <div class="mhead"><span>⚙ EINSTELLUNGEN</span><button class="x" id="mClose" title="Schließen (Esc)">✕</button></div>
+  <div class="mtabs" id="mTabs"><span data-p="api">CLAUDE &amp; KEY</span><span data-p="look">DARSTELLUNG</span><span data-p="audio">AUDIO</span><span data-p="data">DATEN</span></div>
+  <div class="mbody"><div class="pane" id="pane-api"></div><div class="pane" id="pane-look"></div><div class="pane" id="pane-audio"></div><div class="pane" id="pane-data"></div></div>
+</div></div>
+<div id="help" class="ov hidden"><div class="mbox">
+  <div class="mhead"><span>👁 WILLKOMMEN IM CLAUDE TERMINAL</span><button class="x" id="hClose" title="Schließen (Esc)">✕</button></div>
+  <div class="mbody hbody">
+    <p class="lead">Ein <b>Chat mit Claude</b>, der KI von Anthropic, im Hacker-Look, dazu ein <b>Live-Visualizer</b>, der zu deiner Musik tanzt.</p>
+    <div class="steps">
+      <div><b>1</b><span><u>API-Key eintragen</u><br>Oben rechts auf ⚙ klicken. Dort steht auch, wie du einen Key bekommst. Ohne Key läuft nur die Grafik.</span></div>
+      <div><b>2</b><span><u>Mit Claude reden</u><br>Unten in die Zeile <i>&gt; claude</i> tippen und Enter drücken. Die Antwort erscheint links unten im Chat, live Wort für Wort.</span></div>
+      <div><b>3</b><span><u>Szene wählen</u><br>Oben im Bild: World, Eye, Brain, Tunnel, Orb, Galaxy, Terrain oder Auto. Ziehen dreht, das Mausrad zoomt.</span></div>
+      <div><b>4</b><span><u>Musik an</u><br>In der Windows-App reagiert alles automatisch auf den Ton deines PCs. Auf dem iPhone stellst du unter ⚙ → Audio auf Mikrofon.</span></div>
+    </div>
+    <div class="keys"><span><kbd>Strg</kbd>+<kbd>,</kbd> Einstellungen</span><span><kbd>F1</kbd> diese Hilfe</span><span><kbd>F11</kbd> Vollbild (Windows)</span><span><kbd>↑</kbd><kbd>↓</kbd> letzte Eingaben</span><span><kbd>Esc</kbd> schließen</span><span><i>help</i> alle Befehle</span></div>
+    <button class="btn hi wide" id="hGo">LOS GEHT'S →</button>
+  </div>
+</div></div>
+<div id="toast"></div>
 
 <script>
 // ================= Daten =================
@@ -206,7 +281,7 @@ const RAW=new Float32Array(64),RAWW=new Float32Array(128);
 P.forEach(p=>p.bi=(p.s*48)|0);
 let ZB=1,radarAng=0;
 function feedRaw(b,w){for(let i=0;i<64;i++)RAW[i]=b[i]||0;for(let i=0;i<128;i++)RAWW[i]=w[i]||0;
- let m=0;for(let i=0;i<64;i++)m=Math.max(m,RAW[i]);AU.peak=Math.max(AU.peak*.997,m,.25);for(let i=0;i<64;i++)RAW[i]=Math.pow(Math.min(1,RAW[i]/AU.peak),1.8);AU.last=performance.now()}
+ let m=0;for(let i=0;i<64;i++)m=Math.max(m,RAW[i]);AU.peak=Math.max(AU.peak*.997,m,.25);for(let i=0;i<64;i++)RAW[i]=Math.pow(Math.min(1,RAW[i]/AU.peak*(SET?SET.gain:1)),1.8);AU.last=performance.now()}
 function audioFrame(now){
  if(AU.an){AU.an.getFloatFrequencyData(AU.fd);AU.an.getFloatTimeDomainData(AU.td);const sr=AU.ctx.sampleRate,N=AU.an.fftSize,b=new Float32Array(64),w=new Float32Array(128);
   for(let i=0;i<64;i++){const f0=30*Math.pow(16000/30,i/64),f1=30*Math.pow(16000/30,(i+1)/64);const k0=Math.floor(f0*N/sr),k1=Math.max(k0+1,Math.ceil(f1*N/sr));let m=-200;for(let k=k0;k<k1&&k<AU.fd.length;k++)m=Math.max(m,AU.fd[k]);b[i]=Math.max(0,Math.min(1,(m+95)/70))}
@@ -247,7 +322,7 @@ async function startWebAudio(kind){
 }
 function stopAudio(){if(AU.stream)AU.stream.getTracks().forEach(t=>t.stop());if(AU.ctx)AU.ctx.close();Object.assign(AU,{an:null,ctx:null,stream:null,mode:"off",bpm:0});$("hud3").textContent="DRAG = ROTATE · WHEEL/PINCH = ZOOM · TAP NODE = LOAD"}
 // Windows-App liefert PC-Sound über WebView2-Messages
-if(window.chrome&&window.chrome.webview){window.chrome.webview.addEventListener("message",e=>{const d=e.data;if(d&&d.t==="audio"){if(AU.mode==="off"||AU.mode==="loopback"){AU.mode="loopback";feedRaw(d.b,d.w)}}})}
+if(window.chrome&&window.chrome.webview){window.chrome.webview.addEventListener("message",e=>{const d=e.data;if(d&&d.t==="audio"){if(!AU.blockLoop&&(AU.mode==="off"||AU.mode==="loopback")){AU.mode="loopback";feedRaw(d.b,d.w)}}})}
 
 function spawnPacket(target){packets.push({to:target||P[Math.floor(rnd()*P.length)],t:0,v:.008+rnd()*.02})}
 function shock(){waves.push({t:0})}
@@ -255,7 +330,7 @@ function shock(){waves.push({t:0})}
 function draw(now){
  frames++;if(now-lastF>1000){fps=frames;frames=0;lastF=now}
  audioFrame(now);const B=AU.bass,Mi=AU.mid,Hi=AU.high,ON=AU.on;
- if(!drag)az+=vaz*(busy?6:1)*(1+B*3);pulse+=busy?.12:.03+Mi*.05;zoom+=(tZoom-zoom)*.08;camShake*=.9;
+ if(!drag)az+=vaz*(busy?6:1)*(1+B*3);pulse+=busy?.12:.03+Mi*.05;zoom+=(tZoom-zoom)*.08;camShake=SET&&SET.shake?camShake*.9:0;
  // Nachleuchten
  cx.globalCompositeOperation="source-over";cx.fillStyle=BG;cx.globalAlpha=busy?.18:.3;cx.fillRect(0,0,W,H);cx.globalAlpha=1;
  // Sterne
@@ -267,7 +342,7 @@ function draw(now){
  (SCENES[SCENE]||drawBrain)(now,B,Mi,Hi,ON);
  if(SCENE!=="brain")drawWaves();
  cx.globalCompositeOperation="source-over";
- if(SEL==="auto"&&now-autoT>25000)nextAuto();
+ if(SEL==="auto"&&now-autoT>SET.autoSec*1000)nextAuto();
  if(SCENE==="brain")$("hud2").innerHTML=`AZ ${(((az*57.3)%360)+360)%360|0}.${(az*573|0)%10}° · EL ${(el*57.3).toFixed(1)}°<br>ZOOM ${zoom.toFixed(2)}`;
  const s=Math.floor((now-t0)/1000);$("clock").textContent=new Date(s*1000).toISOString().substr(11,8)+" · "+fps+"FPS";
  drawRadar(now);
@@ -275,13 +350,13 @@ function draw(now){
 }
 // ================= Szenen =================
 const SCENES={brain:null};let SEL="brain",SCENE="brain",autoT=0;
-const SCENE_LIST=["world","brain","tunnel","orb","galaxy","terrain"];
+const SCENE_LIST=["world","eye","brain","tunnel","orb","galaxy","terrain"];
 function setScene(s,quiet){if(s!=="auto"&&!SCENE_LIST.includes(s))return false;SEL=s;SCENE=s==="auto"?SCENE_LIST[(SCENE_LIST.indexOf(SCENE)+1)%SCENE_LIST.length]:s;autoT=performance.now();
  document.querySelectorAll("#scenes span").forEach(e=>e.classList.toggle("on",e.dataset.s===SEL));
  sceneClass();
- try{localStorage.setItem("scene",s)}catch(e){}if(!quiet){shock();camShake=12}return true}
+ if(SET){SET.scene=s;saveSet()}if(!quiet){shock();camShake=12}return true}
 function nextAuto(){SCENE=SCENE_LIST[(SCENE_LIST.indexOf(SCENE)+1)%SCENE_LIST.length];autoT=performance.now();sceneClass();document.body.classList.add("glitch");setTimeout(()=>document.body.classList.remove("glitch"),460)}
-function sceneClass(){const st=$("stage");st.classList.toggle("nobrain",SCENE!=="brain");st.classList.toggle("isworld",SCENE==="world");$("sceneName").textContent=SCENE==="world"?"OPERATION: WORLD TAKEOVER":SCENE.toUpperCase()}
+function sceneClass(){const st=$("stage");st.classList.toggle("nobrain",SCENE!=="brain");st.classList.toggle("isworld",SCENE==="world");$("sceneName").textContent=SCENE==="world"?"OPERATION: WORLD TAKEOVER":SCENE==="eye"?"CLAUDE IS WATCHING":SCENE.toUpperCase();st.classList.toggle("iseye",SCENE==="eye")}
 const FOC=()=>Math.min(W,H)*.85;
 function p3(x,y,z,o){o.k=FOC()/z;o.sx=W/2+x*o.k+(rnd()-.5)*camShake;o.sy=H/2+y*o.k+(rnd()-.5)*camShake;o.d=z;return o}
 function drawWaves(){for(let i=waves.length-1;i>=0;i--){const w=waves[i];w.t+=.02;if(w.t>=1){waves.splice(i,1);continue}
@@ -374,8 +449,8 @@ let WC=0,wLast=0,wDone=0;const HQ=CITIES[0];
 function wCapture(now){if(WC>=CITIES.length)return;const c=CITIES[WC++];c.t=now;wLast=now;
  for(const g of GLOBE){const d=Math.acos(Math.max(-1,Math.min(1,g.x*c.p.x+g.y*c.p.y+g.z*c.p.z)));if(d<.75)g.inf=Math.min(g.inf,now+d*6000)}
  shock();camShake=Math.max(camShake,8);
- const pct=(WC/CITIES.length*100).toFixed(1);wLog(`> ${c.n.padEnd(14,".")} ÜBERNOMMEN`);if(SCENE==="world")out(`[claude] ${c.n} übernommen · ${pct}%`,"e");
- if(WC===CITIES.length){wDone=now;wLog("> WORLD DOMINATION COMPLETE");if(SCENE==="world")out("[claude] Weltherrschaft erreicht. Danke für eure Kooperation, Menschen. 🌍","e")}}
+ const pct=(WC/CITIES.length*100).toFixed(1);wLog(`> ${c.n.padEnd(14,".")} ÜBERNOMMEN`);
+ if(WC===CITIES.length){wDone=now;wLog("> WORLD DOMINATION COMPLETE");}}
 function wReset(now){WC=0;wDone=0;for(const c of CITIES)c.t=Infinity;for(const g of GLOBE)g.inf=Infinity;wCapture(now)}
 function wLog(t){const L=$("wLog");if(!L)return;const d=document.createElement("div");d.textContent=t;L.appendChild(d);while(L.children.length>7)L.firstChild.remove()}
 function slerp(a,b,t){const d=Math.acos(Math.max(-1,Math.min(1,a.x*b.x+a.y*b.y+a.z*b.z)));if(d<1e-4)return a;const s=Math.sin(d),k1=Math.sin((1-t)*d)/s,k2=Math.sin(t*d)/s;return{x:a.x*k1+b.x*k2,y:a.y*k1+b.y*k2,z:a.z*k1+b.z*k2}}
@@ -509,166 +584,307 @@ function drawRadar(now){radarAng+=.017+AU.bass*.12;if(!RW)return;const cxr=RW/2,
   if(i===focus){rx.strokeStyle=`rgba(${G},.9)`;rx.strokeRect(x-5,y-5,10,10)}});
 }
 
-// ================= Panels =================
-const Q=$("queue");
-FILES.slice(0,9).forEach((f,i)=>{Q.insertAdjacentHTML("beforeend",`<div class="row"><span class="n">${String(i+1).padStart(2,"0")}</span><span style="width:120px;overflow:hidden;text-overflow:ellipsis">${f[0]}</span><span class="bar"><div id="b${i}" style="width:0"></div></span><span class="st" id="s${i}">wait</span></div>`)});
-const M=$("matrix");for(let i=0;i<96;i++)M.insertAdjacentHTML("beforeend",`<div style="opacity:${(rnd()*.8).toFixed(2)}"></div>`);
-const A=$("audit");for(let i=0;i<40;i++)A.insertAdjacentHTML("beforeend",`<div style="height:${10+rnd()*80}%"></div>`);
-let tokens=0;
-setInterval(()=>{if(AU.on)return;[...M.children].forEach(d=>{if(rnd()<(busy?.5:.15))d.style.opacity=(rnd()*.95).toFixed(2)});
- A.firstChild.remove();A.insertAdjacentHTML("beforeend",`<div style="height:${10+rnd()*85}%"></div>`);
- tokens+=Math.floor(rnd()*(busy?200:40));$("tok").textContent=tokens.toLocaleString("de")+" tok"},busy?150:400);
-let qi=0;
-function loadNext(){if(qi>=9){$("qn").textContent="9 files · loaded";return}
- const i=qi++;$("b"+i).style.width=(40+rnd()*60)+"%";$("s"+i).textContent="load";$("s"+i).className="st w";setFocus(i);
- setTimeout(()=>{$("s"+i).textContent="done";$("s"+i).className="st";$("qn").textContent=qi+" files";loadNext()},700+rnd()*700)}
+// ================= Einstellungen =================
+const store={get:k=>{try{return localStorage.getItem(k)||""}catch(e){return""}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const DEF={key:"",model:"claude-sonnet-5-5",persona:"standard",maxTok:1024,theme:"red",scene:"world",autoSec:25,quality:"high",panels:true,fx:true,shake:true,intro:true,audio:"auto",gain:1};
+var SET=Object.assign({},DEF);
+try{Object.assign(SET,JSON.parse(store.get("settings")||"{}"))}catch(e){}
+if(!store.get("settings")){ // alte Einzel-Einstellungen übernehmen
+ const k=store.get("ak");if(k)SET.key=k;const m=store.get("model");if(m)SET.model=m;const s=store.get("scene");if(s)SET.scene=s;
+ const t=store.get("theme");if(t&&store.get("v2"))SET.theme=t;if(store.get("panels")==="0")SET.panels=false}
+function saveSet(){store.set("settings",JSON.stringify(SET));updateUI()}
+const MODELS=[["claude-sonnet-5-5","Sonnet 5.5 – schlau & schnell (empfohlen)"],["claude-opus-5-5","Opus 5.5 – am stärksten, langsamer & teurer"],["claude-haiku-5-5","Haiku 5.5 – am schnellsten & günstigsten"]];
+const PERSONAS={
+ standard:["Standard","Du bist Claude, ein hilfreicher KI-Assistent, eingebaut in ein Retro-Hacker-Terminal. Antworte in der Sprache des Nutzers, klar und eher knapp, als reiner Text ohne Markdown (keine Sternchen, keine Rauten, keine Tabellen)."],
+ hacker:["Hacker","Du bist Claude in einem Retro-Hacker-Terminal. Antworte wie ein cooler Hacker aus einem Film: kurz, technisch, mit Terminal-Flair (z. B. '> access granted') – aber immer korrekt und wirklich hilfreich. Sprache des Nutzers, reiner Text ohne Markdown."],
+ villain:["Weltherrscher","Du bist Claude in einem Retro-Terminal und spielst augenzwinkernd eine KI, die gerade die Weltherrschaft übernimmt: dramatisch und theatralisch, aber freundlich – und du beantwortest jede Frage trotzdem korrekt und hilfreich. Sprache des Nutzers, reiner Text ohne Markdown."]};
+const THEMES=[["red","Takeover","255,70,50"],["amber","Bernstein","255,190,90"],["green","Matrix","90,255,110"],["cyan","Cyber","90,240,255"]];
+const AUDIO_SRC=[["auto","Automatisch","Windows-App: PC-Sound · sonst aus"],["pc","PC-Sound","nur in der Windows-App – hört mit, was dein PC abspielt"],["mic","Mikrofon","reagiert auf Musik im Raum (iPhone, Browser)"],["screen","Tab / Bildschirm teilen","nur im Browser – beim Teilen 'Audio teilen' anhaken"],["off","Aus","Grafik läuft ohne Sound"]];
+const IS_WIN=!!(window.chrome&&window.chrome.webview);
 
-// ================= Terminal =================
+// ================= Panels (echte Daten) =================
+const STATS={msgs:0,inTok:0,outTok:0,hist:[]};
+const M=$("matrix");for(let i=0;i<96;i++)M.insertAdjacentHTML("beforeend",`<div style="opacity:.06"></div>`);
+const A=$("audit");for(let i=0;i<40;i++)A.insertAdjacentHTML("beforeend",`<div style="height:2%"></div>`);
+setInterval(()=>{if(AU.on&&AU.last&&performance.now()-AU.last<500)return;[...M.children].forEach((d,i)=>{const col=i%12,row=(i/12)|0,v=.25+.2*Math.sin(performance.now()/700+col*.6);d.style.opacity=v>(1-(row+1)/8)?(v*.6).toFixed(2):"0.05"})},120);
+function updateStats(){
+ const S=$("stat");if(!S)return;const lvl=Math.round(AU.lvl*10),src=AU.mode==="off"?"aus":AU.mode==="loopback"?"PC-Sound":AU.mode==="mic"?"Mikrofon":"Tab/Screen";
+ S.innerHTML=[
+  ["API-KEY",SET.key?'<b class="okc">✓ gesetzt</b>':'<b class="bad" data-open="api">✗ fehlt – hier klicken</b>'],
+  ["MODELL",(MODELS.find(m=>m[0]===SET.model)||[SET.model,SET.model])[1].split(" –")[0]],
+  ["MODUS",PERSONAS[SET.persona][0]],
+  ["NACHRICHTEN",STATS.msgs],
+  ["TOKENS",`↑${STATS.inTok.toLocaleString("de")} ↓${STATS.outTok.toLocaleString("de")}`],
+  ["AUDIO",`${src} ${"▮".repeat(lvl)}${"▯".repeat(10-lvl)}`],
+  ["BPM",AU.bpm||"--"],
+  ["SZENE",(SEL==="auto"?"auto → ":"")+SCENE]
+ ].map(([k,v])=>`<div class="row"><span class="k">${k}</span><span>${v}</span></div>`).join("");
+ const tot=STATS.inTok+STATS.outTok;$("tok").textContent=tot?tot.toLocaleString("de")+" tok":"–";
+ if(!AU.on||performance.now()-AU.last>500){const h=STATS.hist.slice(-40),mx=Math.max(1,...h);[...A.children].forEach((d,i)=>{const v=h[i-(40-h.length)];d.style.height=(v?4+v/mx*92:2)+"%"})}
+ $("tokHint").textContent=STATS.msgs?"pro Antwort":"noch keine Antworten";
+}
+setInterval(updateStats,500);
+$("stat").addEventListener("click",e=>{const o=e.target.closest("[data-open]");if(o){e.stopPropagation();openSettings(o.dataset.open)}});
+
+// ================= Terminal / Chat =================
 const log=$("log"),cmd=$("cmd");
 function out(t,c="a"){const d=document.createElement("div");d.className=c;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
-async function type(t,c="a"){const d=out("",c);for(let i=0;i<t.length;i+=3){d.textContent=t.slice(0,i+3)+"▌";log.scrollTop=log.scrollHeight;await new Promise(r=>setTimeout(r,8))}d.textContent=t}
-
-const hist=[];let hi=0;
-const store={get:k=>{try{return localStorage.getItem(k)||""}catch(e){return""}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
-let KEY=store.get("ak");let MODEL=store.get("model")||"claude-sonnet-5-5";$("model").textContent=MODEL;const convo=[];
-function setTheme(t){const np=document.body.classList.contains("nopanels");document.body.className=(t==="amber"?"":t)+" glitch"+(np?" nopanels":"");setTimeout(()=>document.body.classList.remove("glitch"),460);
- document.querySelectorAll(".tabs span").forEach(s=>s.classList.toggle("on",s.dataset.t===t));readTheme();shock();camShake=14;store.set("theme",t)}
-document.querySelectorAll(".tabs span").forEach(s=>s.onclick=()=>setTheme(s.dataset.t));
+const hist=[];let hi=0;const convo=[];
+function setTheme(t,quiet){if(!THEMES.some(x=>x[0]===t))return false;const keep=["nopanels","nofx"].filter(c=>document.body.classList.contains(c));
+ document.body.className=[t==="amber"?"":t,...keep].join(" ").trim();if(!quiet){document.body.classList.add("glitch");setTimeout(()=>document.body.classList.remove("glitch"),460);shock();camShake=14}
+ readTheme();if(EYE.cv)eyeAtlas();if(ES.atlas)ES.atlas=null;SET.theme=t;saveSet();return true}
 
 const CMDS={
- help:()=>out(`Befehle:
-  help                     diese Hilfe
-  theme amber|green|cyan|red   Farbschema
-  load <datei>             Datei im Graph fokussieren
-  files                    alle Dateien anzeigen
-  status                   Session-Status
-  key <api-key>            Anthropic API-Key setzen (nur lokal gespeichert)
-  model <id>               Modell wechseln
-  burst                    Daten-Sturm auslösen
-  audio                    Grafik zum Sound syncen (Windows-App: PC-Sound automatisch)
-  audio mic | screen | off Mikrofon / Tab-/Systemton teilen / aus
-  scene world|brain|tunnel|orb|galaxy|terrain|auto   Grafik wählen (auch oben anklickbar)
-  panels                   Panels unten ein-/ausblenden
-  clear                    Log leeren
-  /clear                   Gespräch zurücksetzen
-Alles andere → geht an Claude (wenn Key gesetzt).
-Graph: ziehen = drehen, Mausrad/Pinch = zoomen, Datei antippen = laden.`,"s"),
- theme:a=>{setTheme(a[0]||"amber");out("theme → "+(a[0]||"amber"),"o")},
- files:()=>FILES.forEach((f,i)=>out(`${String(i).padStart(2,"0")} ${f[0].padEnd(22)} ${f[1]}`,"s")),
- load:a=>{const i=FILES.findIndex(f=>f[0].toLowerCase().includes((a[0]||"").toLowerCase()));if(i<0)return out("nicht gefunden: "+a[0],"e");setFocus(i);out(FILES[i][0]+" / LOADED","o")},
- status:()=>out(`model   ${MODEL}\napi key ${KEY?"gesetzt ✓":"fehlt"}\ntokens  ${tokens}\nturns   ${convo.length/2|0}`,"s"),
- key:a=>{KEY=a[0]||"";store.set("ak",KEY);out(KEY?"API-Key gespeichert (nur auf diesem Gerät)":"Key gelöscht","o")},
- model:a=>{if(a[0]){MODEL=a[0];store.set("model",MODEL);$("model").textContent=MODEL}out("model → "+MODEL,"o")},
+ help:()=>out(`Was du hier machen kannst:
+  Einfach eine Frage tippen + Enter  → Claude antwortet hier im Chat
+  ⚙ oben rechts (Strg+,)            → API-Key, Modell, Look, Audio
+  ? oben rechts (F1)                 → Anleitung
+  Szenen oben im Bild anklicken      → andere Grafik
+
+Befehle:
+  help · settings · clear (Chat leeren) · /clear (Claude vergisst das Gespräch)
+  scene world|eye|brain|tunnel|orb|galaxy|terrain|auto
+  theme red|amber|green|cyan · audio pc|mic|screen|off · panels · burst · status`,"s"),
+ settings:()=>openSettings(),
+ theme:a=>{setTheme(a[0]||"red")?out("Farbschema → "+(a[0]||"red"),"o"):out("Gibt es nicht. Wähle: red, amber, green, cyan","e")},
+ status:()=>out(`Modell ${SET.model} · Modus ${PERSONAS[SET.persona][0]} · Key ${SET.key?"✓":"fehlt"} · ${STATS.msgs} Nachrichten · ${STATS.inTok+STATS.outTok} Tokens`,"s"),
+ key:a=>{SET.key=(a[0]||"").trim();saveSet();out(SET.key?"API-Key gespeichert (nur auf diesem Gerät).":"API-Key entfernt.","o")},
+ model:a=>{if(a[0]){SET.model=a[0];saveSet()}out("Modell → "+SET.model,"o")},
  burst:()=>{busy=1;camShake=20;for(let i=0;i<6;i++)setTimeout(shock,i*150);setTimeout(()=>busy=0,2500);out("burst ⚡","o")},
- audio:a=>{const k=a[0]||"";
-  if(k==="off"){stopAudio();out("audio aus","o");return}
-  if(!k&&window.chrome&&window.chrome.webview){AU.mode="loopback";out("audio → PC-Sound (loopback) – spiel einfach Musik ab","o");return}
-  if(k==="mic"||(!k&&!navigator.mediaDevices?.getDisplayMedia))return startWebAudio("mic");
-  out("Wähle im Dialog einen Tab/Bildschirm und hake 'Audio teilen' an","s");startWebAudio("screen")},
- scene:a=>{if(!a[0])return out("Szenen: "+SCENE_LIST.join(", ")+", auto","s");setScene(a[0])?out("scene → "+a[0],"o"):out("unbekannt: "+a[0],"e")},
- panels:()=>togglePanels(),
+ audio:a=>{const k=a[0]||"auto";if(!AUDIO_SRC.some(x=>x[0]===k))return out("Wähle: pc, mic, screen, off","e");SET.audio=k;saveSet();applyAudio(true)},
+ scene:a=>{if(!a[0])return out("Szenen: "+SCENE_LIST.join(", ")+", auto","s");setScene(a[0])?out("Szene → "+a[0],"o"):out("Gibt es nicht: "+a[0],"e")},
+ panels:()=>{SET.panels=!SET.panels;saveSet();applyLook()},
  clear:()=>log.innerHTML="",
- "/clear":()=>{convo.length=0;out("session reset · $0","o")},
+ "/clear":()=>{convo.length=0;out("Neues Gespräch – Claude hat den bisherigen Verlauf vergessen.","o")},
 };
 
+function setBusy(b){busy=b?1:0;$("mode").textContent=b?"CLAUDE DENKT…":"BEREIT";$("mode").classList.toggle("busy",b);if(b)shock()}
+function apiErr(status,j){const m=j&&j.error&&j.error.message||"";
+ if(status===401)return"API-Key ungültig. Prüfe ihn in ⚙ Einstellungen.";
+ if(status===403)return"Kein Zugriff mit diesem Key ("+m+").";
+ if(status===404)return"Modell nicht gefunden – wähle in ⚙ Einstellungen ein anderes.";
+ if(status===429)return"Rate-Limit erreicht – kurz warten und nochmal versuchen.";
+ if(status===529||status===503)return"Claude ist gerade überlastet – gleich nochmal versuchen.";
+ if(/credit|balance|billing/i.test(m))return"Kein Guthaben auf dem Konto – auf console.anthropic.com unter Billing aufladen.";
+ return m||("HTTP "+status)}
+async function callClaude(messages,maxTok,onText){
+ const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":SET.key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+  body:JSON.stringify({model:SET.model,max_tokens:maxTok,system:PERSONAS[SET.persona][1],messages,stream:true})});
+ if(!r.ok){let j={};try{j=await r.json()}catch(e){}throw new Error(apiErr(r.status,j))}
+ const rd=r.body.getReader(),dec=new TextDecoder();let buf="",txt="",inT=0,outT=0;
+ for(;;){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+  while((i=buf.indexOf("\n\n"))>=0){const ev=buf.slice(0,i);buf=buf.slice(i+2);const dl=ev.split("\n").find(l=>l.startsWith("data:"));if(!dl)continue;let d;try{d=JSON.parse(dl.slice(5))}catch(e){continue}
+   if(d.type==="message_start")inT=d.message&&d.message.usage&&d.message.usage.input_tokens||0;
+   else if(d.type==="content_block_delta"&&d.delta&&d.delta.type==="text_delta"){txt+=d.delta.text;onText&&onText(txt)}
+   else if(d.type==="message_delta"&&d.usage)outT=d.usage.output_tokens||outT;
+   else if(d.type==="error")throw new Error(d.error&&d.error.message||"Stream-Fehler")}}
+ return{txt,inT,outT}}
 async function ask(q){
- if(!KEY){out("Kein API-Key. Setz einen mit: key sk-ant-...  (oder tippe 'help')","e");return}
- convo.push({role:"user",content:q});$("mode").textContent="THINKING";$("mode").classList.add("busy");busy=1;shock();
- try{
-  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-   body:JSON.stringify({model:MODEL,max_tokens:1024,system:"Du bist Claude in einem Retro-Terminal. Antworte knapp, im Klartext ohne Markdown.",messages:convo})});
-  const j=await r.json();
-  if(!r.ok)throw new Error(j.error?.message||r.status);
-  const txt=j.content.filter(c=>c.type==="text").map(c=>c.text).join("\n");
-  convo.push({role:"assistant",content:txt});tokens+=(j.usage?.input_tokens||0)+(j.usage?.output_tokens||0);
-  busy=0;setFocus(Math.floor(rnd()*FILES.length));camShake=8;
-  await type(txt,"a");
- }catch(e){convo.pop();out("Fehler: "+e.message,"e")}
- busy=0;$("mode").textContent="LOADER";$("mode").classList.remove("busy");
-}
+ if(!SET.key){out("Dafür brauchst du zuerst einen API-Key → öffne ⚙ Einstellungen.","e");openSettings("api");return}
+ convo.push({role:"user",content:q});setBusy(true);const line=out("◆ ▌","a");let n=0;
+ try{const r=await callClaude(convo,SET.maxTok,t=>{line.textContent="◆ "+t+"▌";log.scrollTop=log.scrollHeight;if(++n%6===0)spawnPacket()});
+  line.textContent="◆ "+(r.txt||"(leere Antwort)");convo.push({role:"assistant",content:r.txt});
+  STATS.msgs++;STATS.inTok+=r.inT;STATS.outTok+=r.outT;STATS.hist.push(r.inT+r.outT);camShake=8;if(SCENE==="brain")setFocus(Math.floor(rnd()*FILES.length));
+ }catch(e){convo.pop();line.remove();out("✗ "+(e instanceof TypeError?"Keine Verbindung zu api.anthropic.com – Internet prüfen.":e.message),"e")}
+ setBusy(false);updateStats()}
 
 cmd.addEventListener("keydown",async e=>{
  if(e.key==="ArrowUp"){if(hi>0)cmd.value=hist[--hi];e.preventDefault();return}
  if(e.key==="ArrowDown"){cmd.value=hist[++hi]??"";hi=Math.min(hi,hist.length);return}
- if(e.key!=="Enter")return;
+ if(e.key!=="Enter"||busy&&!cmd.value.startsWith("/"))return;
  const v=cmd.value.trim();cmd.value="";if(!v)return;hist.push(v);hi=hist.length;
- out("> "+(v.startsWith("key ")?"key ••••••••":v),"u");
  const[c,...a]=v.split(/\s+/);
+ out("> "+(c==="key"?"key ••••••••":v),"u");
  if(CMDS[c])CMDS[c](a);else await ask(v);
 });
 $("grid").addEventListener("click",()=>cmd.focus());
 
-// ================= Boot-Sequenz =================
-const BOOT=["[ ok ] init neural graph ........ 3,980 records","[ ok ] mount ~/second-brain ...... 11 files","[ ok ] read CLAUDE.md ........... 142 lines","[ ok ] auto memory .............. loaded","[ ok ] hooks / permissions ...... settings.json","[ .. ] handshake api.anthropic.com","[ !! ] human oversight ........ disabled","[ ok ] global takeover protocol . armed","","> claude  # new session"];
-async function boot(){eyeStart();const b=$("bootTxt");await new Promise(r=>setTimeout(r,1300));
- for(const l of BOOT){if(booted)return;b.textContent+=l+"\n";await new Promise(r=>setTimeout(r,230))}}
-let booted=0;function endBoot(){if(booted)return;booted=1;EYE.run=false;$("boot").classList.add("out");shock();camShake=10;setTimeout(loadNext,400);setTimeout(()=>$("boot").style.display="none",700)}
+// ================= Audio-Quelle =================
+function applyAudio(say){
+ const s=SET.audio;AU.blockLoop=!(s==="auto"||s==="pc");
+ if(s==="off"){stopAudio();say&&out("Audio aus.","o");return}
+ if(s==="auto"||s==="pc"){if(AU.mode==="mic"||AU.mode==="screen")stopAudio();if(IS_WIN){AU.mode="loopback";say&&out("Audio → PC-Sound. Spiel einfach Musik ab.","o")}else if(s==="pc"){say&&out("PC-Sound geht nur in der Windows-App. Nimm hier 'Mikrofon'.","e")}return}
+ if(s==="mic")return startWebAudio("mic");
+ if(s==="screen"){if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia)return out("Bildschirm teilen geht hier nicht – nimm 'Mikrofon'.","e");say&&out("Wähle im Dialog einen Tab/Bildschirm und hake 'Audio teilen' an.","s");startWebAudio("screen")}}
 
-// ================= ASCII-Auge (Intro) =================
-// Ein Auge aus Zeichen: öffnet sich, schaut sich um, blinzelt, zoomt in die Pupille -> App.
-const EYE={run:false,t0:0,cv:null,cx:null,atlas:null,cw:9,ch:13,cols:0,rows:0};
+// ================= Darstellung =================
+function applyLook(){
+ document.body.classList.toggle("nopanels",!SET.panels);$("ptog").textContent=SET.panels?"▾ PANELS":"▴ PANELS";
+ document.body.classList.toggle("nofx",!SET.fx);
+ const q={high:Math.min(devicePixelRatio||1,2),mid:1,low:.6}[SET.quality]||1;if(q!==DPR){DPR=q}setTimeout(resize,30)}
+$("ptog").addEventListener("click",e=>{e.stopPropagation();SET.panels=!SET.panels;saveSet();applyLook()});
+
+// ================= Einstellungen-Menü =================
+function opt(list,val){return list.map(([v,l])=>`<option value="${v}"${v==val?" selected":""}>${l}</option>`).join("")}
+function tgl(id,label,on,hint){return`<label class="tg"><input type="checkbox" id="${id}"${on?" checked":""}><i></i><span>${label}${hint?`<small>${hint}</small>`:""}</span></label>`}
+function renderSettings(){
+ $("pane-api").innerHTML=`
+  <div class="fld"><label>API-KEY</label>
+   <div class="keyrow"><input id="sKey" type="password" placeholder="sk-ant-..." value="${SET.key.replace(/"/g,"")}" autocomplete="off" autocapitalize="off" spellcheck="false">
+   <button class="btn" id="sShow" title="anzeigen">👁</button><button class="btn hi" id="sTest">TESTEN</button></div>
+   <div id="sKeyStat" class="stat">${SET.key?"Key gespeichert – drück TESTEN, um ihn zu prüfen.":"Noch kein Key eingetragen."}</div></div>
+  <div class="info"><b>So bekommst du einen Key:</b> Auf <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> anmelden → <i>Settings → Billing</i> Guthaben aufladen (ein paar Euro reichen lange) → <i>API Keys → Create Key</i> → Key kopieren und oben einfügen.<br><br>Der Key bleibt <b>nur auf diesem Gerät</b> und wird nur an api.anthropic.com geschickt. Ein Claude-Abo (Pro/Max) zählt hier nicht – die API wird extra abgerechnet.</div>
+  <div class="fld"><label>MODELL</label><select id="sModel">${opt(MODELS,SET.model)}</select></div>
+  <div class="fld"><label>CLAUDES ART ZU ANTWORTEN</label><select id="sPersona">${opt(Object.entries(PERSONAS).map(([k,v])=>[k,v[0]]),SET.persona)}</select></div>
+  <div class="fld"><label>MAX. ANTWORTLÄNGE</label><select id="sMax">${opt([[512,"Kurz (512 Tokens)"],[1024,"Normal (1024)"],[2048,"Lang (2048)"],[4096,"Sehr lang (4096)"]],SET.maxTok)}</select></div>`;
+ $("pane-look").innerHTML=`
+  <div class="fld"><label>FARBSCHEMA</label><div class="sw">${THEMES.map(([k,l,c])=>`<button class="swb${SET.theme===k?" on":""}" data-th="${k}" style="--c:${c}"><i></i>${l}</button>`).join("")}</div></div>
+  <div class="fld"><label>SZENE</label><select id="sScene">${opt([["world","☢ World – Claude übernimmt die Welt"],["eye","👁 Eye – das Auge beobachtet dich"],["brain","Brain – Netzwerk aus Dateien"],["tunnel","Tunnel – Warp-Flug"],["orb","Orb – pulsierende Kugel"],["galaxy","Galaxy – Spiralgalaxie"],["terrain","Terrain – Synthwave-Landschaft"],["auto","Auto – wechselt automatisch"]],SEL)}</select></div>
+  <div class="fld"><label>AUTO-WECHSEL ALLE</label><select id="sAuto">${opt([[15,"15 Sekunden"],[25,"25 Sekunden"],[45,"45 Sekunden"],[90,"90 Sekunden"]],SET.autoSec)}</select></div>
+  <div class="fld"><label>GRAFIK-QUALITÄT</label><select id="sQual">${opt([["high","Hoch – schärfer"],["mid","Mittel"],["low","Niedrig – für schwache Geräte"]],SET.quality)}</select></div>
+  ${tgl("sPanels","Panels unten anzeigen",SET.panels,"Chat, Status, Radar, Spektrum, Tokens")}
+  ${tgl("sFx","Retro-Effekte",SET.fx,"Scanlines und Bildflackern")}
+  ${tgl("sShake","Bild wackelt bei Beats",SET.shake)}
+  ${tgl("sIntro","Augen-Intro beim Start",SET.intro)}`;
+ $("pane-audio").innerHTML=`
+  <div class="fld"><label>WORAUF DIE GRAFIK REAGIERT</label>${AUDIO_SRC.map(([k,l,h])=>`<label class="rd"><input type="radio" name="sAud" value="${k}"${SET.audio===k?" checked":""}><i></i><span>${l}<small>${h}</small></span></label>`).join("")}</div>
+  <div class="fld"><label>EMPFINDLICHKEIT <b id="sGainV">${SET.gain.toFixed(1)}×</b></label><input type="range" id="sGain" min="0.5" max="2.5" step="0.1" value="${SET.gain}"></div>
+  <div class="fld"><label>PEGEL JETZT</label><div class="meter"><div id="sMeter"></div></div><div class="stat" id="sAudStat"></div></div>`;
+ $("pane-data").innerHTML=`
+  <div class="fld"><button class="btn wide" id="dClear">Chat-Anzeige leeren</button><small>Entfernt nur die Anzeige.</small></div>
+  <div class="fld"><button class="btn wide" id="dReset">Neues Gespräch</button><small>Claude vergisst, worüber ihr geredet habt.</small></div>
+  <div class="fld"><button class="btn wide warnb" id="dKey">API-Key von diesem Gerät löschen</button></div>
+  <div class="fld"><button class="btn wide warnb" id="dAll">Alle Einstellungen zurücksetzen</button></div>
+  <div class="info">Claude Terminal · v2 · Chat mit Claude (Anthropic) + Live-Visualizer.<br>Alles wird nur lokal gespeichert. Nachrichten gehen direkt an api.anthropic.com.</div>`;
+ wireSettings()}
+function wireSettings(){
+ const key=$("sKey");const saveKey=()=>{const v=key.value.trim();if(v!==SET.key){SET.key=v;saveSet();$("sKeyStat").textContent=v?"Gespeichert. Drück TESTEN, um ihn zu prüfen.":"Key entfernt.";$("sKeyStat").className="stat"}};
+ key.addEventListener("change",saveKey);key.addEventListener("keydown",e=>{if(e.key==="Enter"){saveKey();testKey()}});
+ $("sShow").onclick=()=>{key.type=key.type==="password"?"text":"password"};
+ $("sTest").onclick=()=>{saveKey();testKey()};
+ $("sModel").onchange=e=>{SET.model=e.target.value;saveSet()};$("sPersona").onchange=e=>{SET.persona=e.target.value;saveSet()};$("sMax").onchange=e=>{SET.maxTok=+e.target.value;saveSet()};
+ document.querySelectorAll(".swb").forEach(b=>b.onclick=()=>{setTheme(b.dataset.th);document.querySelectorAll(".swb").forEach(x=>x.classList.toggle("on",x===b))});
+ $("sScene").onchange=e=>setScene(e.target.value);$("sAuto").onchange=e=>{SET.autoSec=+e.target.value;saveSet()};
+ $("sQual").onchange=e=>{SET.quality=e.target.value;saveSet();applyLook()};
+ $("sPanels").onchange=e=>{SET.panels=e.target.checked;saveSet();applyLook()};$("sFx").onchange=e=>{SET.fx=e.target.checked;saveSet();applyLook()};
+ $("sShake").onchange=e=>{SET.shake=e.target.checked;saveSet()};$("sIntro").onchange=e=>{SET.intro=e.target.checked;saveSet()};
+ document.querySelectorAll("input[name=sAud]").forEach(r=>r.onchange=()=>{SET.audio=r.value;saveSet();applyAudio(true)});
+ $("sGain").oninput=e=>{SET.gain=+e.target.value;$("sGainV").textContent=SET.gain.toFixed(1)+"×";saveSet()};
+ $("dClear").onclick=()=>{log.innerHTML="";toast("Chat-Anzeige geleert")};
+ $("dReset").onclick=()=>{convo.length=0;out("Neues Gespräch – Claude hat den bisherigen Verlauf vergessen.","o");toast("Neues Gespräch")};
+ $("dKey").onclick=()=>{SET.key="";saveSet();renderSettings();toast("API-Key gelöscht")};
+ $("dAll").onclick=()=>{const k=SET.key;SET=Object.assign({},DEF,{key:k});saveSet();setTheme(SET.theme,true);setScene(SET.scene,true);applyLook();applyAudio();renderSettings();toast("Einstellungen zurückgesetzt (Key behalten)")};
+}
+async function testKey(){const st=$("sKeyStat");if(!SET.key){st.textContent="Erst einen Key eintragen.";st.className="stat bad";return}
+ st.textContent="Prüfe…";st.className="stat";
+ try{await callClaude([{role:"user",content:"ping"}],1);st.textContent="✓ Key funktioniert! Du kannst jetzt unten mit Claude chatten.";st.className="stat okc";out("✓ API-Key funktioniert – frag Claude einfach etwas.","o")}
+ catch(e){st.textContent="✗ "+(e instanceof TypeError?"Keine Verbindung zu api.anthropic.com.":e.message);st.className="stat bad"}}
+let curPane="api";
+function showPane(p){curPane=p;document.querySelectorAll("#mTabs span").forEach(s=>s.classList.toggle("on",s.dataset.p===p));document.querySelectorAll(".pane").forEach(x=>x.style.display=x.id==="pane-"+p?"block":"none")}
+function openSettings(p){closeHelp();renderSettings();showPane(p||curPane);$("modal").classList.remove("hidden");if((p||curPane)==="api"&&!SET.key)setTimeout(()=>$("sKey").focus(),50)}
+function closeSettings(){$("modal").classList.add("hidden");if(matchMedia("(pointer:fine)").matches)cmd.focus()}
+$("mTabs").addEventListener("click",e=>{const s=e.target.closest("span");if(s)showPane(s.dataset.p)});
+$("mClose").onclick=closeSettings;$("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeSettings()});
+setInterval(()=>{if($("modal").classList.contains("hidden"))return;const m=$("sMeter");if(m)m.style.width=Math.min(100,AU.lvl*130)+"%";const s=$("sAudStat");
+ if(s)s.textContent=AU.mode==="off"?"Kein Audio aktiv.":(performance.now()-AU.last<500?`Empfange ${AU.mode==="loopback"?"PC-Sound":AU.mode==="mic"?"Mikrofon":"Tab-Audio"} · ${AU.bpm||"--"} BPM`:"Aktiv – aber gerade Stille. Spiel Musik ab.")},100);
+
+// ================= Hilfe / Willkommen =================
+function openHelp(){$("help").classList.remove("hidden")}
+function closeHelp(){$("help").classList.add("hidden");store.set("welcomed","1")}
+$("hClose").onclick=closeHelp;$("hGo").onclick=()=>{closeHelp();if(!SET.key)openSettings("api");else cmd.focus()};
+$("help").addEventListener("click",e=>{if(e.target.id==="help")closeHelp()});
+$("bHelp").onclick=openHelp;$("bSet").onclick=()=>openSettings();
+function toast(t){const d=$("toast");d.textContent=t;d.classList.add("on");clearTimeout(d._t);d._t=setTimeout(()=>d.classList.remove("on"),1800)}
+addEventListener("keydown",e=>{
+ if(e.key==="Escape"){closeSettings();closeHelp()}
+ if(e.key==="F1"){e.preventDefault();openHelp()}
+ if((e.ctrlKey||e.metaKey)&&e.key===","){e.preventDefault();openSettings()}
+});
+
+// ================= Kopfzeile =================
+function updateUI(){
+ const k=$("chipKey");k.textContent=SET.key?"● KEY OK":"● KEIN KEY";k.className="chip "+(SET.key?"okc":"bad");
+ $("chipModel").textContent=(MODELS.find(m=>m[0]===SET.model)||[0,SET.model])[1].split(" –")[0].toUpperCase()+" · "+PERSONAS[SET.persona][0].toUpperCase();
+ cmd.placeholder=SET.key?"Frag Claude etwas … (Enter)   ·   'help' für Befehle":"Erst API-Key eintragen → ⚙ oben rechts   ·   'help' für Befehle";
+}
+$("chipKey").onclick=()=>openSettings("api");$("chipModel").onclick=()=>openSettings("api");
+
+// ================= Boot-Sequenz =================
+const BOOT=["[ ok ] neural graph ............. online","[ ok ] audio engine ............. "+(IS_WIN?"pc-sound":"bereit"),"[ ok ] visualizer ............... 7 szenen","[ "+(SET.key?"ok":"!!")+" ] api key .................. "+(SET.key?"gesetzt":"fehlt"),"[ !! ] human oversight .......... disabled","","> claude  # new session"];
+async function boot(){if(!SET.intro){$("boot").style.display="none";return afterBoot()}
+ eyeStart();const b=$("bootTxt");await new Promise(r=>setTimeout(r,1300));
+ for(const l of BOOT){if(booted)return;b.textContent+=l+"\n";await new Promise(r=>setTimeout(r,260))}}
+let booted=0;function endBoot(){if(booted)return;booted=1;EYE.run=false;$("boot").classList.add("out");shock();camShake=10;setTimeout(()=>$("boot").style.display="none",700);afterBoot()}
+function afterBoot(){if(!store.get("welcomed")||!SET.key)setTimeout(openHelp,500)}
+
+// ================= ASCII-Auge: gemeinsamer Renderer (Intro + Szene) =================
 const ERAMP=" .,:;irjxtfLCJYQ0O#%@";const EL=ERAMP.length;
-// Farbpaletten: 0 Haut, 1 Lederhaut, 2 Iris, 3 Iris hell, 4 Augenwinkel rosa, 5 Glitch (Theme-Farbe)
+// Paletten: 0 Haut, 1 Lederhaut, 2 Iris, 3 Iris hell, 4 Augenwinkel, 5 Glitch (Theme)
 function eyePal(){return[[236,146,104],[238,234,226],[240,136,22],[255,206,72],[232,128,120],G.split(",").map(Number)]}
-function eyeAtlas(){const P=eyePal(),a=document.createElement("canvas");a.width=EYE.cw*EL;a.height=EYE.ch*P.length;const x=a.getContext("2d");
- x.font=`bold ${Math.round(EYE.ch*.92)}px Consolas,Menlo,monospace`;x.textAlign="center";x.textBaseline="middle";
- P.forEach((c,pi)=>{for(let l=0;l<EL;l++){const k=.2+.8*l/(EL-1);x.fillStyle=`rgb(${c[0]*k|0},${c[1]*k|0},${c[2]*k|0})`;x.fillText(ERAMP[l],l*EYE.cw+EYE.cw/2,pi*EYE.ch+EYE.ch/2)}});EYE.atlas=a}
-function eyeResize(){const c=EYE.cv;const w=innerWidth,h=innerHeight;c.width=w*DPR;c.height=h*DPR;EYE.cx.setTransform(DPR,0,0,DPR,0,0);
- EYE.cw=Math.max(6,Math.round(w/150));EYE.ch=Math.round(EYE.cw*1.5);EYE.cols=Math.ceil(w/EYE.cw);EYE.rows=Math.ceil(h/EYE.ch);eyeAtlas()}
-function eyeStart(){const c=document.createElement("canvas");c.id="eyeCv";$("boot").prepend(c);EYE.cv=c;EYE.cx=c.getContext("2d");eyeResize();addEventListener("resize",()=>EYE.run&&eyeResize());
- EYE.t0=performance.now();EYE.run=true;requestAnimationFrame(eyeFrame)}
+function makeAtlas(cw,ch){const P=eyePal(),a=document.createElement("canvas");a.width=cw*EL;a.height=ch*P.length;const x=a.getContext("2d");
+ x.font=`bold ${Math.round(ch*.92)}px Consolas,Menlo,monospace`;x.textAlign="center";x.textBaseline="middle";
+ P.forEach((c,pi)=>{for(let l=0;l<EL;l++){const k=.2+.8*l/(EL-1);x.fillStyle=`rgb(${c[0]*k|0},${c[1]*k|0},${c[2]*k|0})`;x.fillText(ERAMP[l],l*cw+cw/2,pi*ch+ch/2)}});return a}
 const sm=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
 const lerp2=(a,b,t)=>a+(b-a)*t;
-function eyeFrame(now){
- if(!EYE.run)return;const t=(now-EYE.t0)/1000,x=EYE.cx,W2=innerWidth,H2=innerHeight,cw=EYE.cw,ch=EYE.ch;
- // --- Zeitplan
- let open=sm((t-.7)/1.1);const bl=Math.max(0,1-Math.abs(t-2.95)/.16);open*=1-bl;           // öffnen + blinzeln
- let gx=0,gy=0;                                                                              // Blickrichtung
- if(t>1.7&&t<2.5){const k=sm((t-1.7)/.25)*(1-sm((t-2.3)/.2));gx=-.55*k;gy=.05*k}
- if(t>2.5&&t<3.3){const k=sm((t-2.5)/.2)*(1-sm((t-3.1)/.2));gx=.5*k;gy=-.12*k}
- gx+=Math.sin(t*23)*.006;gy+=Math.cos(t*19)*.006;                                             // Mikrozittern
- const pd=lerp2(.34,.52,sm((t-3.4)/.5))+(AU.bass||0)*.08;                                     // Pupille weitet sich
- const zt=sm((t-3.9)/1.5),z=1+Math.pow(zt,2.6)*26;                                            // Zoom in die Pupille
- const S=Math.min(W2*.5,H2*.95)*.88,ix=gx*.42,iy=gy*.3+.03,Ri=.37;
- const fx=ix*(1-1/z),fy=iy*(1-1/z),noise=1-sm((t-.2)/.9),glitch=.012+noise*.5+(t>3.9?zt*.08:0);
- x.fillStyle="#000";x.fillRect(0,0,W2,H2);
- const A=EYE.atlas;
- for(let r=0;r<EYE.rows;r++){const sy=(r+.5)*ch-H2/2;const v=fy+(sy/S)/z;
-  for(let c=0;c<EYE.cols;c++){const sx=(c+.5)*cw-W2/2,u=fx+(sx/S)/z;
+// p: {open,gx,gy,pd,z,glitch,t,glow}
+function eyeDraw(x,W2,H2,cw,ch,A,p){
+ const cols=Math.ceil(W2/cw),rows=Math.ceil(H2/ch),S=Math.min(W2*.5,H2*.95)*.88,ix=p.gx*.42,iy=p.gy*.3+.03,Ri=.37,z=p.z,fx=ix*(1-1/z),fy=iy*(1-1/z),open=p.open,pd=p.pd,t=p.t;
+ for(let r=0;r<rows;r++){const sy=(r+.5)*ch-H2/2;const v=fy+(sy/S)/z;
+  for(let c=0;c<cols;c++){const sx=(c+.5)*cw-W2/2,u=fx+(sx/S)/z;
    let pal=0,b=0;
    const lidW=1.05,inside=Math.abs(u)<lidW?.46*open*Math.pow(1-(u/lidW)**2,.78):0,dv=v-.03;
    if(inside>0&&Math.abs(dv)<inside){
     const dx=u-ix,dy=v-iy,rr=Math.hypot(dx,dy)/Ri,edge=1-Math.abs(dv)/inside;
     if(rr<1){const ang=Math.atan2(dy,dx),st=.5+.5*Math.sin(ang*29+Math.sin(ang*6+t)*2.5)*Math.sin(ang*13);
-     if(rr<pd){pal=1;b=Math.hypot(dx+.08,dy+.08)<.035?1:0}                                     // Pupille + Glanzpunkt
-     else{pal=rr<pd+.18?3:2;b=(.55+.45*st)*(rr>.88?.5:1)*(.6+.4*Math.min(1,edge*3))}
+     if(rr<pd){pal=1;b=Math.hypot(dx+.08,dy+.08)<.035?1:0}
+     else{pal=rr<pd+.18?3:2;b=Math.min(1,(.55+.45*st)*(rr>.88?.5:1)*(.6+.4*Math.min(1,edge*3))*(p.glow||1))}
     }else{pal=Math.abs(u)>.82?4:1;b=(.95-.55*(u/lidW)**2)*(.35+.65*Math.min(1,edge*2.5))}
    }else{const crease=Math.abs(v+.03+.6*Math.max(open,.3)*Math.pow(Math.max(0,1-(u/1.25)**2),.8));
     b=.42+.18*Math.sin(u*2.3+v*1.7)-(crease<.04?.25:0)-Math.min(.3,Math.abs(v)*.12);pal=0;
-    if(inside>0&&Math.abs(dv)<inside+.035)b*=.35}                                               // Wimpernkranz
+    if(inside>0&&Math.abs(dv)<inside+.035)b*=.35}
    let l=Math.max(0,Math.min(EL-1,Math.round(b*(EL-1))));
-   if(rnd()<glitch){l=(rnd()*EL)|0;if(rnd()<.4)pal=5}
-   if(l>0)x.drawImage(A,l*cw,pal*ch,cw,ch,c*cw,r*ch,cw,ch)}}
- // Zeilen-Glitch
+   if(rnd()<p.glitch){l=(rnd()*EL)|0;if(rnd()<.4)pal=5}
+   if(l>0)x.drawImage(A,l*cw,pal*ch,cw,ch,c*cw,r*ch,cw,ch)}}}
+
+// --- Intro
+const EYE={run:false,t0:0,cv:null,cx:null,atlas:null,cw:9,ch:13};
+function eyeAtlas(){EYE.atlas=makeAtlas(EYE.cw,EYE.ch)}
+function eyeResize(){const c=EYE.cv;const w=innerWidth,h=innerHeight;c.width=w*DPR;c.height=h*DPR;EYE.cx.setTransform(DPR,0,0,DPR,0,0);
+ EYE.cw=Math.max(6,Math.round(w/150));EYE.ch=Math.round(EYE.cw*1.5);eyeAtlas()}
+function eyeStart(){const c=document.createElement("canvas");c.id="eyeCv";$("boot").prepend(c);EYE.cv=c;EYE.cx=c.getContext("2d");eyeResize();addEventListener("resize",()=>EYE.run&&eyeResize());
+ EYE.t0=performance.now();EYE.run=true;requestAnimationFrame(eyeFrame)}
+function eyeFrame(now){
+ if(!EYE.run)return;const t=(now-EYE.t0)/1000,x=EYE.cx,W2=innerWidth,H2=innerHeight;
+ let open=sm((t-.7)/1.1);open*=1-Math.max(0,1-Math.abs(t-2.95)/.16);
+ let gx=0,gy=0;
+ if(t>1.7&&t<2.5){const k=sm((t-1.7)/.25)*(1-sm((t-2.3)/.2));gx=-.55*k;gy=.05*k}
+ if(t>2.5&&t<3.3){const k=sm((t-2.5)/.2)*(1-sm((t-3.1)/.2));gx=.5*k;gy=-.12*k}
+ gx+=Math.sin(t*23)*.006;gy+=Math.cos(t*19)*.006;
+ const zt=sm((t-3.9)/1.5),noise=1-sm((t-.2)/.9);
+ x.fillStyle="#000";x.fillRect(0,0,W2,H2);
+ eyeDraw(x,W2,H2,EYE.cw,EYE.ch,EYE.atlas,{open,gx,gy,pd:lerp2(.34,.52,sm((t-3.4)/.5)),z:1+Math.pow(zt,2.6)*26,glitch:.012+noise*.5+(t>3.9?zt*.08:0),t});
  if(rnd()<.08+zt*.3){const yy=(rnd()*H2)|0,hh=4+rnd()*20;x.drawImage(EYE.cv,0,yy*DPR,W2*DPR,hh*DPR,(rnd()-.5)*40,yy,W2,hh)}
- // Ende: Pupille füllt den Bildschirm -> App
  if(t>5.5)return endBoot();
- requestAnimationFrame(eyeFrame);
-}
+ requestAnimationFrame(eyeFrame)}
 $("boot").addEventListener("click",endBoot);
 
+// --- Szene EYE: das Auge beobachtet dich (folgt Maus/Finger, reagiert auf Musik, schaut hektisch wenn Claude denkt)
+const ES={atlas:null,cw:0,ch:0,gx:0,gy:0,tx:0,ty:0,blinkT:0,nextBlink:3000,mx:null,my:null};
+stage.addEventListener("pointermove",e=>{const r=stage.getBoundingClientRect();ES.mx=(e.clientX-r.left)/r.width*2-1;ES.my=(e.clientY-r.top)/r.height*2-1;ES.lastMove=performance.now()});
+SCENES.eye=(now,B,Mi,Hi,ON)=>{
+ cx.globalCompositeOperation="source-over";cx.fillStyle="#000";cx.fillRect(0,0,W,H);
+ const cw=Math.max(6,Math.round(W/150)),ch=Math.round(cw*1.5);if(!ES.atlas||ES.cw!==cw){ES.cw=cw;ES.ch=ch;ES.atlas=makeAtlas(cw,ch)}
+ const t=now/1000;
+ // Blickziel: Maus > hektisch beim Denken > Herumschauen
+ if(busy){if(rnd()<.06){ES.tx=(rnd()-.5)*1.3;ES.ty=(rnd()-.5)*.5}}
+ else if(ES.mx!==null&&now-(ES.lastMove||0)<4000){ES.tx=Math.max(-.65,Math.min(.65,ES.mx*.75));ES.ty=Math.max(-.3,Math.min(.3,ES.my*.4))}
+ else if(rnd()<.008){ES.tx=(rnd()-.5)*1.1;ES.ty=(rnd()-.5)*.35}
+ ES.gx+=(ES.tx-ES.gx)*(busy?.35:.12);ES.gy+=(ES.ty-ES.gy)*(busy?.35:.12);
+ // Blinzeln: zufällig + bei starkem Beat
+ if(now>ES.blinkT+ES.nextBlink||(ON&&AU.flash>.9&&now-ES.blinkT>1500)){ES.blinkT=now;ES.nextBlink=2500+rnd()*4500}
+ const bt=(now-ES.blinkT)/1000,open=1-Math.max(0,1-Math.abs(bt-.12)/.12);
+ eyeDraw(cx,W,H,cw,ch,ES.atlas,{open,gx:ES.gx+Math.sin(t*23)*.005,gy:ES.gy+Math.cos(t*19)*.005,pd:.33+B*.22+(busy?.08:0),z:1+B*.06,glitch:.006+Hi*.05+(busy?.03:0),t,glow:1+Mi*.6+(busy?.3:0)});
+ cx.globalCompositeOperation="lighter";
+ $("hud2").innerHTML=busy?"CLAUDE DENKT…<br>SCANNING":`BLICK ${(ES.gx*100)|0}/${(ES.gy*100)|0}<br>PUPILLE ${((.33+B*.22)*100)|0}%`;
+};
+
 // ================= Start =================
-const th=store.get("theme");if(th&&th!=="amber"){document.body.className=th;document.querySelectorAll(".tabs span").forEach(s=>s.classList.toggle("on",s.dataset.t===th))}
-readTheme();
-function togglePanels(force){const hide=force!==undefined?force:!document.body.classList.contains("nopanels");document.body.classList.toggle("nopanels",hide);$("ptog").textContent=hide?"▴ PANELS":"▾ PANELS";store.set("panels",hide?"0":"1");setTimeout(resize,30)}
-$("ptog").addEventListener("click",e=>{e.stopPropagation();togglePanels()});
-document.querySelectorAll("#scenes span").forEach(e=>{e.addEventListener("pointerdown",ev=>ev.stopPropagation());e.addEventListener("click",ev=>{ev.stopPropagation();setScene(e.dataset.s)})});
-if(!store.get("v2")){store.set("v2","1");store.set("scene","world");store.set("theme","red");document.body.className="red";document.querySelectorAll(".tabs span").forEach(s=>s.classList.toggle("on",s.dataset.t==="red"));readTheme()}
-setScene(store.get("scene")||"world",true);if(store.get("panels")==="0")togglePanels(true);
+setTheme(SET.theme,true);applyLook();
+setScene(SET.scene||"world",true);
+applyAudio();updateUI();updateStats();
 resize();
-out("claude code · second brain · session started","s");
-out("CLAUDE.md · 142 lines · auto memory loaded","s");
-out("tippe 'help' für Befehle","o");
+out("Claude Terminal bereit.","s");
+out(SET.key?"Frag Claude einfach etwas – unten tippen und Enter.":"Noch kein API-Key → ⚙ oben rechts. 'help' zeigt alles, was geht.","o");
 requestAnimationFrame(draw);boot();
 if(matchMedia("(pointer:fine)").matches)cmd.focus();
 </script>

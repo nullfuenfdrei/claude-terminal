@@ -18,6 +18,24 @@ struct ClaudeTerminalApp: App {
 /// Die Seite läuft unter der Origin https://claude-terminal.app, damit
 /// localStorage (API-Key, Theme) und Anfragen an api.anthropic.com funktionieren.
 struct TerminalWebView: UIViewRepresentable {
+    final class Coordinator: NSObject, WKUIDelegate {
+        // Links mit target=_blank (z. B. console.anthropic.com) in Safari öffnen
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if let url = navigationAction.request.url { UIApplication.shared.open(url) }
+            return nil
+        }
+        // Mikrofon für den Audio-Visualizer: iOS fragt den Nutzer
+        @available(iOS 15.0, *)
+        func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                     initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType,
+                     decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+            decisionHandler(.prompt)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
@@ -31,6 +49,7 @@ struct TerminalWebView: UIViewRepresentable {
         web.scrollView.bounces = false
         web.scrollView.contentInsetAdjustmentBehavior = .never
         web.allowsLinkPreview = false
+        web.uiDelegate = context.coordinator
         #if DEBUG
         if #available(iOS 16.4, *) { web.isInspectable = true }
         #endif
