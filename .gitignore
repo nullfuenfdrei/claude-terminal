@@ -1,0 +1,6 @@
+dist/
+windows/bin/
+windows/obj/
+ios/build/
+ios/*.xcodeproj/
+*.ipa

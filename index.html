@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Claude Code Terminal</title>
+<style>
+:root{
+  --bg:#060403; --panel:#0c0806; --line:#2a1c12; --dim:#7a5a3e; --fg:#e8c79a; --hi:#ffcf6b; --acc:#ff9d3c; --warn:#ff5a3c; --ok:#9be36b;
+  --glow:255,190,90; --glow2:255,110,80;
+}
+body.green{--bg:#020502;--panel:#050a05;--line:#123018;--dim:#4f8a55;--fg:#b8f5b0;--hi:#7dff6b;--acc:#3dff5a;--warn:#ff4a4a;--ok:#7dff6b;--glow:90,255,110;--glow2:210,255,220}
+body.cyan{--bg:#03060a;--panel:#060c12;--line:#13303a;--dim:#4d7f8c;--fg:#bfe9ee;--hi:#6ff3ff;--acc:#38e0ff;--warn:#ff3b5c;--ok:#6ff3c0;--glow:90,240,255;--glow2:255,60,110}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:12px/1.4 "JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;overflow:hidden}
+#app{display:grid;grid-template-rows:30px 1fr 36px 220px;height:100vh;height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+header{display:flex;align-items:center;gap:18px;padding:0 12px;border-bottom:1px solid var(--line);letter-spacing:.12em;text-transform:uppercase;font-size:11px;white-space:nowrap;overflow:hidden}
+header b{color:var(--hi);text-shadow:0 0 8px rgba(var(--glow),.8)}
+header .tabs span{margin-right:14px;color:var(--dim);cursor:pointer}
+header .tabs span.on{color:var(--hi);text-shadow:0 0 8px rgba(var(--glow),.8)}
+header .r{margin-left:auto;color:var(--dim)}
+#stage{position:relative;overflow:hidden;cursor:grab;touch-action:none}
+#stage:active{cursor:grabbing}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.hud{position:absolute;left:12px;top:8px;color:var(--dim);font-size:11px;letter-spacing:.1em;pointer-events:none}
+.hud2{position:absolute;right:12px;top:8px;color:var(--dim);font-size:11px;text-align:right;pointer-events:none}
+.hud3{position:absolute;left:12px;bottom:8px;color:var(--dim);font-size:10px;letter-spacing:.1em;pointer-events:none}
+.loaded{position:absolute;padding:4px 10px;border:1px solid var(--hi);color:var(--hi);background:rgba(0,0,0,.55);letter-spacing:.08em;font-size:13px;pointer-events:none;box-shadow:0 0 18px rgba(var(--glow),.45),inset 0 0 12px rgba(var(--glow),.2);text-shadow:0 0 6px rgba(var(--glow),.9)}
+.card{position:absolute;width:250px;background:rgba(8,6,4,.82);backdrop-filter:blur(3px);border:1px solid var(--line);border-left:2px solid var(--hi);padding:8px 10px;pointer-events:none;font-size:11px;transition:left .5s cubic-bezier(.2,.8,.2,1),top .5s cubic-bezier(.2,.8,.2,1)}
+.card h4{margin:0 0 6px;color:var(--hi);font-weight:normal}
+.card .k{color:var(--dim)}
+.corner{position:absolute;width:14px;height:14px;border:1px solid var(--hi);opacity:.6;pointer-events:none}
+.c1{left:6px;top:28px;border-right:0;border-bottom:0}.c2{right:6px;top:28px;border-left:0;border-bottom:0}.c3{left:6px;bottom:24px;border-right:0;border-top:0}.c4{right:6px;bottom:24px;border-left:0;border-top:0}
+#prompt{display:flex;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:0 12px;background:var(--panel)}
+#prompt .p{color:var(--hi);margin-right:8px;text-shadow:0 0 6px rgba(var(--glow),.8)}
+#cmd{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--fg);font:inherit;font-size:13px;caret-color:var(--hi)}
+#prompt .tag{color:var(--acc);font-size:10px;letter-spacing:.15em}
+#prompt .tag.busy{animation:blink .5s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
+#grid{display:grid;grid-template-columns:1.5fr 1fr 150px 1fr 1fr;gap:1px;background:var(--line)}
+.pn{background:var(--panel);padding:6px 9px;overflow:hidden;display:flex;flex-direction:column;min-width:0;position:relative}
+.pn .t{display:flex;justify-content:space-between;color:var(--fg);font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
+.pn .t i{font-style:normal;color:var(--dim)}
+#log{flex:1;overflow-y:auto;white-space:pre-wrap;word-break:break-word;font-size:11.5px}
+#log .u{color:var(--hi)} #log .s{color:var(--dim)} #log .a{color:var(--fg)} #log .e{color:var(--warn)} #log .o{color:var(--ok)}
+#log::-webkit-scrollbar{width:4px}#log::-webkit-scrollbar-thumb{background:var(--line)}
+.row{display:flex;justify-content:space-between;gap:6px;font-size:11px;white-space:nowrap}
+.row .n{color:var(--dim);width:22px}
+.bar{flex:1;height:7px;margin:4px 6px;background:repeating-linear-gradient(90deg,var(--line) 0 3px,transparent 3px 4px);position:relative}
+.bar>div{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(90deg,var(--acc) 0 3px,transparent 3px 4px);transition:width .6s;filter:drop-shadow(0 0 3px rgba(var(--glow),.8))}
+.st{color:var(--ok);width:40px;text-align:right}.st.w{color:var(--warn)}
+#radar{position:relative;flex:1}
+#matrix{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;flex:1}
+#matrix div{background:var(--acc);transition:opacity .5s}
+#audit{flex:1;display:flex;align-items:flex-end;gap:2px}
+#audit div{flex:1;background:linear-gradient(to top,var(--acc),var(--hi));opacity:.85;transition:height .4s}
+.big{font-size:22px;color:var(--hi);margin:2px 0;text-shadow:0 0 10px rgba(var(--glow),.7)}
+.scan{pointer-events:none;position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px);z-index:50}
+.vig{pointer-events:none;position:fixed;inset:0;box-shadow:inset 0 0 180px rgba(0,0,0,.95);z-index:49}
+.flick{pointer-events:none;position:fixed;inset:0;background:rgba(var(--glow),.03);animation:fl 4s infinite;z-index:48}
+@keyframes fl{0%,100%{opacity:.3}47%{opacity:.3}48%{opacity:1}49%{opacity:.2}50%{opacity:.6}}
+body.glitch #app{animation:gl .45s steps(6)}
+@keyframes gl{0%{filter:none;transform:none}20%{filter:hue-rotate(90deg) saturate(3);transform:translate(4px,-2px) skewX(4deg)}40%{filter:invert(1);transform:translate(-6px,1px)}60%{filter:hue-rotate(-90deg);transform:translate(3px,2px) skewX(-3deg)}80%{filter:brightness(2);transform:none}100%{filter:none}}
+#boot{position:fixed;inset:0;background:#000;z-index:100;padding:40px;color:var(--hi);font-size:13px;white-space:pre;transition:opacity .6s;text-shadow:0 0 8px rgba(var(--glow),.8)}
+#boot.out{opacity:0;pointer-events:none}
+#boot .logo{font-size:min(5vw,40px);letter-spacing:.3em;margin-bottom:24px}
+@media (max-width:820px){
+  #app{grid-template-rows:30px 1fr 40px 46%}
+  #grid{grid-template-columns:1fr 1fr;grid-template-rows:2fr 1fr 1fr}
+  #grid .pn:first-child{grid-column:1/3}
+  #grid .pn:nth-child(4){display:none}
+  .card{width:200px;font-size:10px}
+  header .tabs span{margin-right:8px}
+  header>span:first-child{display:none}
+  #cmd{font-size:16px}
+  #boot{padding:calc(env(safe-area-inset-top) + 24px) 18px;font-size:10px}
+  #grid .pn:nth-child(5){grid-column:1/3}
+  .hud3{display:none}
+}
+</style>
+</head>
+<body>
+<div id="boot"><div class="logo">CLAUDE&nbsp;CODE</div><div id="bootTxt"></div></div>
+<div id="app">
+  <header>
+    <span><b>Claude Code</b> / Second Brain</span>
+    <span class="tabs"><span class="on" data-t="amber">● Brain</span><span data-t="green">● Agents</span><span data-t="cyan">● Pipeline</span></span>
+    <span class="r" id="clock">00:00:00 · 60FPS</span>
+  </header>
+
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
+    <div class="hud" id="hud">GRAPH / 0 RECORDS · 0 LINKS</div>
+    <div class="hud2" id="hud2">AZ 0.0° · EL 0.0°<br>ZOOM 1.00</div>
+    <div class="hud3" id="hud3">DRAG = ROTATE · WHEEL/PINCH = ZOOM · TAP NODE = LOAD</div>
+    <div class="loaded" id="loaded">CLAUDE.md / LOADED</div>
+    <div class="card" id="card"><h4 id="cardT">CLAUDE.md</h4><div class="k">ROLE</div><div id="cardR">Map of the brain. Under 200 lines.</div><div class="k" style="margin-top:4px">SOURCE</div><div id="cardS">~/second-brain/CLAUDE.md</div><div class="k" style="margin-top:4px">LOADED</div><div id="cardL">every session</div></div>
+  </div>
+
+  <div id="prompt"><span class="p">&gt; claude</span><input id="cmd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="# new session — tippe 'help'"><span class="tag" id="mode">LOADER</span></div>
+
+  <div id="grid">
+    <div class="pn"><div class="t">01 Session Chat <i id="model">claude-sonnet-5-5</i></div><div id="log"></div></div>
+    <div class="pn"><div class="t">02 Load Queue <i id="qn">0 files</i></div><div id="queue"></div></div>
+    <div class="pn"><div class="t">04 Graph Index <i id="sel">1/11</i></div><div id="radar"><canvas id="rc"></canvas></div></div>
+    <div class="pn"><div class="t">07 Rule Matrix <i>rules × files</i></div><div id="matrix"></div></div>
+    <div class="pn"><div class="t">08 Prompt Audit <i>tokens</i></div><div class="big" id="tok">0</div><div id="audit"></div></div>
+  </div>
+</div>
+<div class="flick"></div><div class="scan"></div><div class="vig"></div>
+
+<script>
+// ================= Daten =================
+const FILES=[
+ ["CLAUDE.md","Map of the brain. Under 200 lines.","~/second-brain/CLAUDE.md","every session"],
+ ["CLAUDE.local.md","Private overrides, never committed.","~/second-brain/CLAUDE.local.md","every session"],
+ ["memory.md","Auto memory · loaded every session.","~/.claude/memory/MEMORY.md","every session"],
+ ["notes/","Loose thoughts, unsorted.","~/second-brain/notes/","on demand"],
+ ["inbox.md","Everything new lands here first.","~/second-brain/inbox.md","on demand"],
+ ["skills/weekly-review","Runs every Friday.","~/.claude/skills/weekly-review","on trigger"],
+ ["decisions.md","Why we chose what we chose.","~/second-brain/decisions.md","on demand"],
+ ["projects/","Active work, one folder each.","~/second-brain/projects/","on demand"],
+ ["rules/people.md","Who is who, how to talk to them.","~/second-brain/rules/people.md","always"],
+ ["people/","Contact notes.","~/second-brain/people/","on demand"],
+ ["settings.json","Hooks, permissions, env.","~/.claude/settings.json","startup"],
+];
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
+let G="255,190,90",G2="255,110,80",FG="#e8c79a",DIM="#7a5a3e",BG="#060403";
+function readTheme(){G=css("--glow");G2=css("--glow2");FG=css("--fg");DIM=css("--dim");BG=css("--bg");makeSprites()}
+
+// ================= Glow-Sprites =================
+let SPR1,SPR2,SPRW;
+function sprite(rgb,size,core){const c=document.createElement("canvas");c.width=c.height=size;const x=c.getContext("2d");const g=x.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+ g.addColorStop(0,`rgba(255,255,255,${core})`);g.addColorStop(.15,`rgba(${rgb},.9)`);g.addColorStop(.45,`rgba(${rgb},.18)`);g.addColorStop(1,`rgba(${rgb},0)`);x.fillStyle=g;x.fillRect(0,0,size,size);return c}
+let PAL1=[],PAL2=[];
+function makeSprites(){SPR1=sprite(G,64,1);SPR2=sprite(G2,64,.6);SPRW=sprite(G,256,1);
+ PAL1=Array.from({length:16},(_,i)=>`rgba(${G},${(i+1)/16*.8})`);PAL2=Array.from({length:16},(_,i)=>`rgba(${G2},${(i+1)/16*.8})`)}
+
+// ================= 3D-Szene =================
+const cv=$("cv"),cx=cv.getContext("2d");
+let W,H,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0);rsz()}
+addEventListener("resize",resize);
+
+const rnd=Math.random;
+const clusters=[{x:.3,y:-.22,z:0,r:.2,n:1100},{x:-.32,y:.12,z:.15,r:.34,n:1400},{x:.12,y:.26,z:-.25,r:.3,n:1200}];
+const P=[];
+clusters.forEach((c,ci)=>{for(let i=0;i<c.n;i++){const th=2*Math.PI*rnd(),ph=Math.acos(2*rnd()-1),rr=c.r*Math.pow(rnd(),.6);
+ P.push({x:c.x+rr*Math.sin(ph)*Math.cos(th),y:c.y+rr*Math.sin(ph)*Math.sin(th)*.8,z:c.z+rr*Math.cos(ph),c:ci,s:rnd(),sx:0,sy:0,k:0,d:0})}});
+// Filamente: Partikel entlang Bögen zwischen Clustern
+for(let f=0;f<14;f++){const a=clusters[f%3],b=clusters[(f+1)%3];const bend=(rnd()-.5)*.5;for(let i=0;i<120;i++){const t=i/120;
+ P.push({x:a.x+(b.x-a.x)*t+(rnd()-.5)*.03,y:a.y+(b.y-a.y)*t+Math.sin(t*Math.PI)*bend+(rnd()-.5)*.03,z:a.z+(b.z-a.z)*t+(rnd()-.5)*.03,c:3,s:rnd(),sx:0,sy:0,k:0,d:0})}}
+const stars=Array.from({length:400},()=>({x:rnd()*2-1,y:rnd()*2-1,z:rnd(),s:rnd()}));
+const hub={x:.3,y:-.22,z:0};
+const nodes=FILES.map((f,i)=>({f,p:P[Math.floor(rnd()*P.length)],i,sx:0,sy:0}));
+nodes[0].p=hub;
+const links=[];for(let i=0;i<420;i++){const a=P[Math.floor(rnd()*1100)],b=P[Math.floor(rnd()*P.length)];links.push([a,b])}
+const packets=[];const waves=[];
+$("hud").textContent=`GRAPH / ${P.length.toLocaleString("en")} RECORDS · ${(links.length*28).toLocaleString("en")} LINKS`;
+
+let az=.4,el=.25,vaz=.0015,zoom=1,tZoom=1,focus=0,pulse=0,t0=performance.now(),frames=0,fps=60,lastF=t0,busy=0,camShake=0;
+function proj(p,o){const ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el),se=Math.sin(el);
+ const px=p.x-.03,py=p.y-.03;const x=px*ca-p.z*sa,z1=px*sa+p.z*ca,y=py*ce-z1*se,z=py*se+z1*ce;
+ const k=1.7/(2.3+z)*zoom,sc=Math.min(W,H*1.4);
+ o.sx=W/2+x*sc*k+(rnd()-.5)*camShake;o.sy=H/2+y*sc*k+(rnd()-.5)*camShake;o.k=k;o.d=z;return o}
+const hp={sx:0,sy:0,k:0,d:0},tmpA={},tmpB={};
+
+function spawnPacket(target){packets.push({to:target||P[Math.floor(rnd()*P.length)],t:0,v:.008+rnd()*.02})}
+function shock(){waves.push({t:0})}
+
+function draw(now){
+ frames++;if(now-lastF>1000){fps=frames;frames=0;lastF=now}
+ if(!drag)az+=vaz*(busy?6:1);pulse+=busy?.12:.03;zoom+=(tZoom-zoom)*.08;camShake*=.9;
+ // Nachleuchten
+ cx.globalCompositeOperation="source-over";cx.fillStyle=BG;cx.globalAlpha=busy?.18:.3;cx.fillRect(0,0,W,H);cx.globalAlpha=1;
+ // Sterne
+ for(const s of stars){const x=((s.x+az*.05*s.z)%1+1)%1*W,y=(s.y*.5+.5)*H;cx.fillStyle=`rgba(${G},${.15+.25*s.s*(.5+.5*Math.sin(pulse*.5+s.s*40))})`;cx.fillRect(x,y,1,1)}
+ cx.globalCompositeOperation="lighter";
+ proj(hub,hp);
+ // Orbit-Ringe um den Hub
+ for(let r=0;r<3;r++){cx.strokeStyle=`rgba(${G},${.12-r*.03})`;cx.lineWidth=1;cx.beginPath();const R=(.12+r*.08);
+  for(let i=0;i<=64;i++){const a=i/64*Math.PI*2+pulse*.1*(r%2?-1:1);proj({x:hub.x+Math.cos(a)*R,y:hub.y+Math.sin(a)*R*.25,z:hub.z+Math.sin(a)*R},tmpA);i?cx.lineTo(tmpA.sx,tmpA.sy):cx.moveTo(tmpA.sx,tmpA.sy)}cx.stroke()}
+ // Partikel projizieren
+ for(const p of P){proj(p,p)}
+ // Links (in 4 Helligkeitsgruppen gebündelt -> wenige stroke()-Aufrufe)
+ cx.lineWidth=.6;
+ for(let g=0;g<4;g++){cx.strokeStyle=`rgba(${G},${.035+g*.025})`;cx.beginPath();
+  for(let i=0;i<links.length;i++){if(((Math.sin(pulse*.7+i)+1)*2|0)%4!==g)continue;const[a,b]=links[i];cx.moveTo(a.sx,a.sy);cx.lineTo(b.sx,b.sy)}cx.stroke()}
+ cx.strokeStyle=`rgba(${G},.05)`;cx.beginPath();
+ for(let i=0;i<70;i++){const b=links[i][1];cx.moveTo(hp.sx,hp.sy);cx.quadraticCurveTo((hp.sx+b.sx)/2,Math.min(hp.sy,b.sy)-40,b.sx,b.sy)}cx.stroke();
+ // Partikel (Tiefe = Größe + Helligkeit), Farben vorberechnet
+ for(const p of P){const tw=.55+.45*Math.sin(pulse+p.s*30);const depth=Math.max(.15,Math.min(1,1.2-p.d));
+  if(p.s>.985){const r=(10+14*p.s)*p.k*depth;cx.globalAlpha=tw*depth;cx.drawImage(p.c===0||p.c===3?SPR1:SPR2,p.sx-r/2,p.sy-r/2,r,r);cx.globalAlpha=1}
+  else{const lvl=Math.min(15,(tw*depth*(p.c===0?1:.55)*15)|0);cx.fillStyle=(p.c===0||p.c===3?PAL1:PAL2)[lvl];const r=(p.c===0?1.7:1.2)*p.k*depth;cx.fillRect(p.sx,p.sy,r,r)}}
+ // Datenpakete
+ if(rnd()<(busy?.9:.25))spawnPacket();
+ for(let i=packets.length-1;i>=0;i--){const q=packets[i];q.t+=q.v*(busy?2.5:1);if(q.t>=1){packets.splice(i,1);continue}
+  const e=q.t,x=hp.sx+(q.to.sx-hp.sx)*e,y=hp.sy+(q.to.sy-hp.sy)*e-Math.sin(e*Math.PI)*30;
+  const e2=Math.max(0,e-.06),x2=hp.sx+(q.to.sx-hp.sx)*e2,y2=hp.sy+(q.to.sy-hp.sy)*e2-Math.sin(e2*Math.PI)*30;
+  cx.strokeStyle=`rgba(${G},.7)`;cx.lineWidth=1.5;cx.beginPath();cx.moveTo(x2,y2);cx.lineTo(x,y);cx.stroke();cx.drawImage(SPR1,x-6,y-6,12,12)}
+ // Schockwellen
+ for(let i=waves.length-1;i>=0;i--){const w=waves[i];w.t+=.018;if(w.t>=1){waves.splice(i,1);continue}
+  cx.strokeStyle=`rgba(${G},${(1-w.t)*.8})`;cx.lineWidth=2*(1-w.t)+.5;cx.beginPath();cx.ellipse(hp.sx,hp.sy,w.t*W*.5,w.t*W*.12,0,0,7);cx.stroke()}
+ // Hub + Horizontlinie
+ const hs=110+18*Math.sin(pulse*2)+(busy?50*Math.abs(Math.sin(pulse*3)):0);cx.drawImage(SPRW,hp.sx-hs/2,hp.sy-hs/2,hs,hs);
+ const lg=cx.createLinearGradient(0,0,W,0);lg.addColorStop(0,`rgba(${G},0)`);lg.addColorStop(hp.sx/W,`rgba(${G},.9)`);lg.addColorStop(1,`rgba(${G},0)`);
+ cx.strokeStyle=lg;cx.lineWidth=1.2;cx.beginPath();cx.moveTo(0,hp.sy);cx.lineTo(W,hp.sy);cx.stroke();
+ // Datei-Labels
+ cx.globalCompositeOperation="source-over";cx.font="11px Consolas,Menlo,monospace";
+ nodes.forEach(n=>{const p=n.p;n.sx=p.sx;n.sy=p.sy;const on=n.i===focus;if(n.i===0)return;
+  const w=cx.measureText(n.f[0]).width+10;
+  cx.fillStyle=on?`rgb(${G})`:"rgba(0,0,0,.7)";cx.fillRect(p.sx,p.sy-8,w,15);
+  if(!on){cx.strokeStyle=`rgba(${G},.25)`;cx.strokeRect(p.sx+.5,p.sy-7.5,w,14)}
+  cx.fillStyle=on?"#000":FG;cx.fillText(n.f[0],p.sx+5,p.sy+3);
+  cx.fillStyle=DIM;cx.font="9px Consolas,Menlo,monospace";cx.fillText("pos:"+((p.s*9999)|0),p.sx+5,p.sy+17);cx.font="11px Consolas,Menlo,monospace";
+  if(on){cx.setLineDash([3,3]);cx.strokeStyle=`rgba(${G},.8)`;cx.beginPath();cx.moveTo(p.sx,p.sy);cx.lineTo(hp.sx,hp.sy);cx.stroke();cx.setLineDash([])}});
+ const L=$("loaded");L.style.left=(hp.sx+22)+"px";L.style.top=(hp.sy-34)+"px";
+ const fp=nodes[focus].p;const C=$("card");C.style.left=Math.max(8,Math.min(W-260,fp.sx-270))+"px";C.style.top=Math.max(34,Math.min(H-140,fp.sy-60))+"px";
+ $("hud2").innerHTML=`AZ ${(((az*57.3)%360)+360)%360|0}.${(az*573|0)%10}° · EL ${(el*57.3).toFixed(1)}°<br>ZOOM ${zoom.toFixed(2)}`;
+ const s=Math.floor((now-t0)/1000);$("clock").textContent=new Date(s*1000).toISOString().substr(11,8)+" · "+fps+"FPS";
+ drawRadar(now);
+ requestAnimationFrame(draw);
+}
+
+// ================= Steuerung: Drag / Zoom / Tap =================
+const stage=$("stage");let drag=null,pinch=0;
+stage.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,az,el,moved:0};stage.setPointerCapture(e.pointerId)});
+stage.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved=Math.max(drag.moved,Math.abs(dx)+Math.abs(dy));
+ az=drag.az-dx*.006;el=Math.max(-1.2,Math.min(1.2,drag.el+dy*.006))});
+stage.addEventListener("pointerup",e=>{if(drag&&drag.moved<6){const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  let best=-1,bd=40;nodes.forEach(n=>{const d=Math.hypot(n.sx-x,n.sy-y);if(d<bd){bd=d;best=n.i}});if(best>=0){setFocus(best);out(FILES[best][0]+" / LOADED","o")}}
+ drag=null});
+stage.addEventListener("wheel",e=>{e.preventDefault();tZoom=Math.max(.5,Math.min(3,tZoom*(e.deltaY>0?.9:1.1)))},{passive:false});
+stage.addEventListener("touchmove",e=>{if(e.touches.length===2){drag=null;const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+ if(pinch)tZoom=Math.max(.5,Math.min(3,tZoom*d/pinch));pinch=d}},{passive:true});
+stage.addEventListener("touchend",()=>pinch=0);
+
+function setFocus(i){focus=i;const f=FILES[i];$("cardT").textContent=f[0];$("cardR").textContent=f[1];$("cardS").textContent=f[2];$("cardL").textContent=f[3];
+ $("loaded").textContent=f[0]+" / LOADED";$("sel").textContent=(i+1)+"/"+FILES.length;for(let k=0;k<8;k++)spawnPacket(nodes[i].p);shock()}
+
+// ================= Radar =================
+const rc=$("rc"),rx=rc.getContext("2d");let RW,RH;
+function rsz(){RW=rc.parentElement.clientWidth;RH=rc.parentElement.clientHeight;rc.width=RW*DPR;rc.height=RH*DPR;rx.setTransform(DPR,0,0,DPR,0,0)}
+const blips=FILES.map((f,i)=>({a:i/FILES.length*Math.PI*2+rnd()*.4,r:.3+rnd()*.65}));
+function drawRadar(now){if(!RW)return;const cxr=RW/2,cyr=RH/2,R=Math.min(RW,RH)/2-4,sw=now/900;
+ rx.fillStyle=BG;rx.globalAlpha=.25;rx.fillRect(0,0,RW,RH);rx.globalAlpha=1;
+ rx.strokeStyle=`rgba(${G},.2)`;rx.lineWidth=1;for(let i=1;i<=3;i++){rx.beginPath();rx.arc(cxr,cyr,R*i/3,0,7);rx.stroke()}
+ rx.beginPath();rx.moveTo(cxr-R,cyr);rx.lineTo(cxr+R,cyr);rx.moveTo(cxr,cyr-R);rx.lineTo(cxr,cyr+R);rx.stroke();
+ const g=rx.createConicGradient?rx.createConicGradient(sw-.6,cxr,cyr):null;
+ if(g){g.addColorStop(0,`rgba(${G},0)`);g.addColorStop(.095,`rgba(${G},.35)`);g.addColorStop(.1,`rgba(${G},0)`);rx.fillStyle=g;rx.beginPath();rx.arc(cxr,cyr,R,0,7);rx.fill()}
+ rx.strokeStyle=`rgba(${G},.9)`;rx.beginPath();rx.moveTo(cxr,cyr);rx.lineTo(cxr+Math.cos(sw)*R,cyr+Math.sin(sw)*R);rx.stroke();
+ blips.forEach((b,i)=>{const x=cxr+Math.cos(b.a)*b.r*R,y=cyr+Math.sin(b.a)*b.r*R;const diff=((sw-b.a)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);const a=Math.max(.15,1-diff/3);
+  rx.fillStyle=i===focus?"#fff":`rgba(${G},${a})`;rx.fillRect(x-1.5,y-1.5,i===focus?4:3,i===focus?4:3);
+  if(i===focus){rx.strokeStyle=`rgba(${G},.9)`;rx.strokeRect(x-5,y-5,10,10)}});
+}
+
+// ================= Panels =================
+const Q=$("queue");
+FILES.slice(0,9).forEach((f,i)=>{Q.insertAdjacentHTML("beforeend",`<div class="row"><span class="n">${String(i+1).padStart(2,"0")}</span><span style="width:120px;overflow:hidden;text-overflow:ellipsis">${f[0]}</span><span class="bar"><div id="b${i}" style="width:0"></div></span><span class="st" id="s${i}">wait</span></div>`)});
+const M=$("matrix");for(let i=0;i<96;i++)M.insertAdjacentHTML("beforeend",`<div style="opacity:${(rnd()*.8).toFixed(2)}"></div>`);
+const A=$("audit");for(let i=0;i<40;i++)A.insertAdjacentHTML("beforeend",`<div style="height:${10+rnd()*80}%"></div>`);
+let tokens=0;
+setInterval(()=>{[...M.children].forEach(d=>{if(rnd()<(busy?.5:.15))d.style.opacity=(rnd()*.95).toFixed(2)});
+ A.firstChild.remove();A.insertAdjacentHTML("beforeend",`<div style="height:${10+rnd()*85}%"></div>`);
+ tokens+=Math.floor(rnd()*(busy?200:40));$("tok").textContent=tokens.toLocaleString("de")+" tok"},busy?150:400);
+let qi=0;
+function loadNext(){if(qi>=9){$("qn").textContent="9 files · loaded";return}
+ const i=qi++;$("b"+i).style.width=(40+rnd()*60)+"%";$("s"+i).textContent="load";$("s"+i).className="st w";setFocus(i);
+ setTimeout(()=>{$("s"+i).textContent="done";$("s"+i).className="st";$("qn").textContent=qi+" files";loadNext()},700+rnd()*700)}
+
+// ================= Terminal =================
+const log=$("log"),cmd=$("cmd");
+function out(t,c="a"){const d=document.createElement("div");d.className=c;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+async function type(t,c="a"){const d=out("",c);for(let i=0;i<t.length;i+=3){d.textContent=t.slice(0,i+3)+"▌";log.scrollTop=log.scrollHeight;await new Promise(r=>setTimeout(r,8))}d.textContent=t}
+
+const hist=[];let hi=0;
+const store={get:k=>{try{return localStorage.getItem(k)||""}catch(e){return""}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+let KEY=store.get("ak");let MODEL=store.get("model")||"claude-sonnet-5-5";$("model").textContent=MODEL;const convo=[];
+function setTheme(t){document.body.className=(t==="amber"?"":t)+" glitch";setTimeout(()=>document.body.classList.remove("glitch"),460);
+ document.querySelectorAll(".tabs span").forEach(s=>s.classList.toggle("on",s.dataset.t===t));readTheme();shock();camShake=14;store.set("theme",t)}
+document.querySelectorAll(".tabs span").forEach(s=>s.onclick=()=>setTheme(s.dataset.t));
+
+const CMDS={
+ help:()=>out(`Befehle:
+  help                     diese Hilfe
+  theme amber|green|cyan   Farbschema
+  load <datei>             Datei im Graph fokussieren
+  files                    alle Dateien anzeigen
+  status                   Session-Status
+  key <api-key>            Anthropic API-Key setzen (nur lokal gespeichert)
+  model <id>               Modell wechseln
+  burst                    Daten-Sturm auslösen
+  clear                    Log leeren
+  /clear                   Gespräch zurücksetzen
+Alles andere → geht an Claude (wenn Key gesetzt).
+Graph: ziehen = drehen, Mausrad/Pinch = zoomen, Datei antippen = laden.`,"s"),
+ theme:a=>{setTheme(a[0]||"amber");out("theme → "+(a[0]||"amber"),"o")},
+ files:()=>FILES.forEach((f,i)=>out(`${String(i).padStart(2,"0")} ${f[0].padEnd(22)} ${f[1]}`,"s")),
+ load:a=>{const i=FILES.findIndex(f=>f[0].toLowerCase().includes((a[0]||"").toLowerCase()));if(i<0)return out("nicht gefunden: "+a[0],"e");setFocus(i);out(FILES[i][0]+" / LOADED","o")},
+ status:()=>out(`model   ${MODEL}\napi key ${KEY?"gesetzt ✓":"fehlt"}\ntokens  ${tokens}\nturns   ${convo.length/2|0}`,"s"),
+ key:a=>{KEY=a[0]||"";store.set("ak",KEY);out(KEY?"API-Key gespeichert (nur auf diesem Gerät)":"Key gelöscht","o")},
+ model:a=>{if(a[0]){MODEL=a[0];store.set("model",MODEL);$("model").textContent=MODEL}out("model → "+MODEL,"o")},
+ burst:()=>{busy=1;camShake=20;for(let i=0;i<6;i++)setTimeout(shock,i*150);setTimeout(()=>busy=0,2500);out("burst ⚡","o")},
+ clear:()=>log.innerHTML="",
+ "/clear":()=>{convo.length=0;out("session reset · $0","o")},
+};
+
+async function ask(q){
+ if(!KEY){out("Kein API-Key. Setz einen mit: key sk-ant-...  (oder tippe 'help')","e");return}
+ convo.push({role:"user",content:q});$("mode").textContent="THINKING";$("mode").classList.add("busy");busy=1;shock();
+ try{
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+   body:JSON.stringify({model:MODEL,max_tokens:1024,system:"Du bist Claude in einem Retro-Terminal. Antworte knapp, im Klartext ohne Markdown.",messages:convo})});
+  const j=await r.json();
+  if(!r.ok)throw new Error(j.error?.message||r.status);
+  const txt=j.content.filter(c=>c.type==="text").map(c=>c.text).join("\n");
+  convo.push({role:"assistant",content:txt});tokens+=(j.usage?.input_tokens||0)+(j.usage?.output_tokens||0);
+  busy=0;setFocus(Math.floor(rnd()*FILES.length));camShake=8;
+  await type(txt,"a");
+ }catch(e){convo.pop();out("Fehler: "+e.message,"e")}
+ busy=0;$("mode").textContent="LOADER";$("mode").classList.remove("busy");
+}
+
+cmd.addEventListener("keydown",async e=>{
+ if(e.key==="ArrowUp"){if(hi>0)cmd.value=hist[--hi];e.preventDefault();return}
+ if(e.key==="ArrowDown"){cmd.value=hist[++hi]??"";hi=Math.min(hi,hist.length);return}
+ if(e.key!=="Enter")return;
+ const v=cmd.value.trim();cmd.value="";if(!v)return;hist.push(v);hi=hist.length;
+ out("> "+(v.startsWith("key ")?"key ••••••••":v),"u");
+ const[c,...a]=v.split(/\s+/);
+ if(CMDS[c])CMDS[c](a);else await ask(v);
+});
+$("grid").addEventListener("click",()=>cmd.focus());
+
+// ================= Boot-Sequenz =================
+const BOOT=["[ ok ] init neural graph ........ 3,980 records","[ ok ] mount ~/second-brain ...... 11 files","[ ok ] read CLAUDE.md ........... 142 lines","[ ok ] auto memory .............. loaded","[ ok ] hooks / permissions ...... settings.json","[ .. ] handshake api.anthropic.com","","> claude  # new session"];
+async function boot(){const b=$("bootTxt");for(const l of BOOT){b.textContent+=l+"\n";await new Promise(r=>setTimeout(r,140))}
+ await new Promise(r=>setTimeout(r,350));endBoot()}
+let booted=0;function endBoot(){if(booted)return;booted=1;$("boot").classList.add("out");shock();camShake=10;setTimeout(loadNext,400)}
+$("boot").addEventListener("click",endBoot);
+
+// ================= Start =================
+const th=store.get("theme");if(th&&th!=="amber"){document.body.className=th;document.querySelectorAll(".tabs span").forEach(s=>s.classList.toggle("on",s.dataset.t===th))}
+readTheme();resize();
+out("claude code · second brain · session started","s");
+out("CLAUDE.md · 142 lines · auto memory loaded","s");
+out("tippe 'help' für Befehle","o");
+requestAnimationFrame(draw);boot();
+if(matchMedia("(pointer:fine)").matches)cmd.focus();
+</script>
+</body>
+</html>
