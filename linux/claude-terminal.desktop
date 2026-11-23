@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Claude Terminal
+Comment=Chat mit Claude im Hacker-Look + Live-Musik-Visualizer
+Exec=claude-terminal %U
+Icon=claude-terminal
+Terminal=false
+Categories=Utility;AudioVideo;
+StartupWMClass=claude-terminal

@@ -1,0 +1,24 @@
+# Maintainer: nullfuenfdrei
+pkgname=claude-terminal
+pkgver=2.0.0
+pkgrel=1
+pkgdesc="Chat mit Claude im Hacker-Look + Live-Musik-Visualizer"
+arch=('any')
+url="https://github.com/nullfuenfdrei/claude-terminal"
+license=('custom')
+depends=('electron')
+optdepends=('pipewire-pulse: PC-Sound für den Visualizer (oder pulseaudio)')
+source=()
+
+package() {
+  local src="$startdir"
+  local dst="$pkgdir/usr/lib/claude-terminal"
+  install -Dm644 "$src/../index.html"   "$dst/index.html"
+  install -Dm644 "$src/main.js"         "$dst/main.js"
+  install -Dm644 "$src/preload.js"      "$dst/preload.js"
+  install -Dm644 "$src/package.json"    "$dst/package.json"
+  install -Dm644 "$src/../AppIcon.png"  "$dst/icon.png"
+  install -Dm644 "$src/../AppIcon.png"  "$pkgdir/usr/share/pixmaps/claude-terminal.png"
+  install -Dm755 "$src/claude-terminal.sh"      "$pkgdir/usr/bin/claude-terminal"
+  install -Dm644 "$src/claude-terminal.desktop" "$pkgdir/usr/share/applications/claude-terminal.desktop"
+}

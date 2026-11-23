@@ -208,7 +208,7 @@ body.glitch #app{animation:gl .45s steps(6)}
       <div><b>1</b><span><u>API-Key eintragen</u><br>Oben rechts auf ⚙ klicken. Dort steht auch, wie du einen Key bekommst. Ohne Key läuft nur die Grafik.</span></div>
       <div><b>2</b><span><u>Mit Claude reden</u><br>Unten in die Zeile <i>&gt; claude</i> tippen und Enter drücken. Die Antwort erscheint links unten im Chat, live Wort für Wort.</span></div>
       <div><b>3</b><span><u>Szene wählen</u><br>Oben im Bild: World, Eye, Brain, Tunnel, Orb, Galaxy, Terrain oder Auto. Ziehen dreht, das Mausrad zoomt.</span></div>
-      <div><b>4</b><span><u>Musik an</u><br>In der Windows-App reagiert alles automatisch auf den Ton deines PCs. Auf dem iPhone stellst du unter ⚙ → Audio auf Mikrofon.</span></div>
+      <div><b>4</b><span><u>Musik an</u><br>In der Windows- und Linux-App reagiert alles automatisch auf den Ton deines PCs. Auf dem iPhone stellst du unter ⚙ → Audio auf Mikrofon.</span></div>
     </div>
     <div class="keys"><span><kbd>Strg</kbd>+<kbd>,</kbd> Einstellungen</span><span><kbd>F1</kbd> diese Hilfe</span><span><kbd>F11</kbd> Vollbild (Windows)</span><span><kbd>↑</kbd><kbd>↓</kbd> letzte Eingaben</span><span><kbd>Esc</kbd> schließen</span><span><i>help</i> alle Befehle</span></div>
     <button class="btn hi wide" id="hGo">LOS GEHT'S →</button>
@@ -307,17 +307,27 @@ function audioPanels(){
  const cells=M.children;for(let i=0;i<cells.length;i++){const col=i%12,row=(i/12)|0;const v=AU.b[col*5];cells[i].style.opacity=v>(1-(row+1)/8)?(.35+.65*v).toFixed(2):"0.06"}
  const n=Math.round(AU.lvl*12);$("hud3").textContent=`AUDIO · ${AU.mode.toUpperCase()} · ${"█".repeat(n)}${"░".repeat(12-n)} · BPM ${AU.bpm||"--"}`;
 }
+// Linux: PC-Sound = "Monitor"-Gerät von PipeWire/PulseAudio
+async function openMonitor(){
+ const c={echoCancellation:false,noiseSuppression:false,autoGainControl:false};
+ const first=await navigator.mediaDevices.getUserMedia({audio:c});           // Erlaubnis holen, damit Gerätenamen sichtbar werden
+ const devs=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="audioinput");
+ const mon=devs.find(d=>/monitor/i.test(d.label));
+ if(!mon){first.getTracks().forEach(t=>t.stop());throw new Error("Kein Monitor-Gerät gefunden. Läuft pipewire-pulse (oder pulseaudio)? Alternativ: ⚙ → Audio → Mikrofon.")}
+ first.getTracks().forEach(t=>t.stop());
+ return navigator.mediaDevices.getUserMedia({audio:Object.assign({deviceId:{exact:mon.deviceId}},c)})}
 async function startWebAudio(kind){
  stopAudio();
  try{
-  const stream=kind==="mic"?await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})
+  const stream=kind==="monitor"?await openMonitor():kind==="mic"?await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})
    :await navigator.mediaDevices.getDisplayMedia({video:true,audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},systemAudio:"include"});
   if(!stream.getAudioTracks().length){stream.getTracks().forEach(t=>t.stop());throw new Error("kein Ton freigegeben – beim Teilen 'Systemaudio/Tab-Audio teilen' anhaken")}
   stream.getVideoTracks().forEach(t=>t.stop());
   const ctx=new (window.AudioContext||window.webkitAudioContext)();const an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.5;
   ctx.createMediaStreamSource(stream).connect(an);
   Object.assign(AU,{ctx,an,stream,fd:new Float32Array(an.frequencyBinCount),td:new Float32Array(an.fftSize),mode:kind});
-  out("audio → "+kind+" ✓","o");
+  if(ctx.state==="suspended")ctx.resume();
+  out(kind==="monitor"?"Audio → PC-Sound ✓ ("+(stream.getAudioTracks()[0].label||"Monitor")+")":"Audio → "+(kind==="mic"?"Mikrofon":"Tab/Bildschirm")+" ✓","o");
  }catch(e){out("Audio-Fehler: "+e.message,"e")}
 }
 function stopAudio(){if(AU.stream)AU.stream.getTracks().forEach(t=>t.stop());if(AU.ctx)AU.ctx.close();Object.assign(AU,{an:null,ctx:null,stream:null,mode:"off",bpm:0});$("hud3").textContent="DRAG = ROTATE · WHEEL/PINCH = ZOOM · TAP NODE = LOAD"}
@@ -599,8 +609,10 @@ const PERSONAS={
  hacker:["Hacker","Du bist Claude in einem Retro-Hacker-Terminal. Antworte wie ein cooler Hacker aus einem Film: kurz, technisch, mit Terminal-Flair (z. B. '> access granted') – aber immer korrekt und wirklich hilfreich. Sprache des Nutzers, reiner Text ohne Markdown."],
  villain:["Weltherrscher","Du bist Claude in einem Retro-Terminal und spielst augenzwinkernd eine KI, die gerade die Weltherrschaft übernimmt: dramatisch und theatralisch, aber freundlich – und du beantwortest jede Frage trotzdem korrekt und hilfreich. Sprache des Nutzers, reiner Text ohne Markdown."]};
 const THEMES=[["red","Takeover","255,70,50"],["amber","Bernstein","255,190,90"],["green","Matrix","90,255,110"],["cyan","Cyber","90,240,255"]];
-const AUDIO_SRC=[["auto","Automatisch","Windows-App: PC-Sound · sonst aus"],["pc","PC-Sound","nur in der Windows-App – hört mit, was dein PC abspielt"],["mic","Mikrofon","reagiert auf Musik im Raum (iPhone, Browser)"],["screen","Tab / Bildschirm teilen","nur im Browser – beim Teilen 'Audio teilen' anhaken"],["off","Aus","Grafik läuft ohne Sound"]];
+const AUDIO_SRC=[["auto","Automatisch","Windows-/Linux-App: PC-Sound · sonst aus"],["pc","PC-Sound","nur in der Windows- und Linux-App – hört mit, was dein PC abspielt"],["mic","Mikrofon","reagiert auf Musik im Raum (iPhone, Browser)"],["screen","Tab / Bildschirm teilen","nur im Browser – beim Teilen 'Audio teilen' anhaken"],["off","Aus","Grafik läuft ohne Sound"]];
 const IS_WIN=!!(window.chrome&&window.chrome.webview);
+const IS_DESK=!!(window.claudeHost&&window.claudeHost.app==="electron");   // Linux-App (Electron)
+const HAS_PC=IS_WIN||IS_DESK;
 
 // ================= Panels (echte Daten) =================
 const STATS={msgs:0,inTok:0,outTok:0,hist:[]};
@@ -608,7 +620,7 @@ const M=$("matrix");for(let i=0;i<96;i++)M.insertAdjacentHTML("beforeend",`<div 
 const A=$("audit");for(let i=0;i<40;i++)A.insertAdjacentHTML("beforeend",`<div style="height:2%"></div>`);
 setInterval(()=>{if(AU.on&&AU.last&&performance.now()-AU.last<500)return;[...M.children].forEach((d,i)=>{const col=i%12,row=(i/12)|0,v=.25+.2*Math.sin(performance.now()/700+col*.6);d.style.opacity=v>(1-(row+1)/8)?(v*.6).toFixed(2):"0.05"})},120);
 function updateStats(){
- const S=$("stat");if(!S)return;const lvl=Math.round(AU.lvl*10),src=AU.mode==="off"?"aus":AU.mode==="loopback"?"PC-Sound":AU.mode==="mic"?"Mikrofon":"Tab/Screen";
+ const S=$("stat");if(!S)return;const lvl=Math.round(AU.lvl*10),src=AU.mode==="off"?"aus":AU.mode==="loopback"||AU.mode==="monitor"?"PC-Sound":AU.mode==="mic"?"Mikrofon":"Tab/Screen";
  S.innerHTML=[
   ["API-KEY",SET.key?'<b class="okc">✓ gesetzt</b>':'<b class="bad" data-open="api">✗ fehlt – hier klicken</b>'],
   ["MODELL",(MODELS.find(m=>m[0]===SET.model)||[SET.model,SET.model])[1].split(" –")[0]],
@@ -703,7 +715,7 @@ $("grid").addEventListener("click",()=>cmd.focus());
 function applyAudio(say){
  const s=SET.audio;AU.blockLoop=!(s==="auto"||s==="pc");
  if(s==="off"){stopAudio();say&&out("Audio aus.","o");return}
- if(s==="auto"||s==="pc"){if(AU.mode==="mic"||AU.mode==="screen")stopAudio();if(IS_WIN){AU.mode="loopback";say&&out("Audio → PC-Sound. Spiel einfach Musik ab.","o")}else if(s==="pc"){say&&out("PC-Sound geht nur in der Windows-App. Nimm hier 'Mikrofon'.","e")}return}
+ if(s==="auto"||s==="pc"){if(AU.mode==="mic"||AU.mode==="screen")stopAudio();if(IS_DESK){if(AU.mode!=="monitor")startWebAudio("monitor");return}if(IS_WIN){AU.mode="loopback";say&&out("Audio → PC-Sound. Spiel einfach Musik ab.","o")}else if(s==="pc"){say&&out("PC-Sound geht nur in der Windows- oder Linux-App. Nimm hier 'Mikrofon'.","e")}return}
  if(s==="mic")return startWebAudio("mic");
  if(s==="screen"){if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia)return out("Bildschirm teilen geht hier nicht – nimm 'Mikrofon'.","e");say&&out("Wähle im Dialog einen Tab/Bildschirm und hake 'Audio teilen' an.","s");startWebAudio("screen")}}
 
@@ -776,7 +788,7 @@ function closeSettings(){$("modal").classList.add("hidden");if(matchMedia("(poin
 $("mTabs").addEventListener("click",e=>{const s=e.target.closest("span");if(s)showPane(s.dataset.p)});
 $("mClose").onclick=closeSettings;$("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeSettings()});
 setInterval(()=>{if($("modal").classList.contains("hidden"))return;const m=$("sMeter");if(m)m.style.width=Math.min(100,AU.lvl*130)+"%";const s=$("sAudStat");
- if(s)s.textContent=AU.mode==="off"?"Kein Audio aktiv.":(performance.now()-AU.last<500?`Empfange ${AU.mode==="loopback"?"PC-Sound":AU.mode==="mic"?"Mikrofon":"Tab-Audio"} · ${AU.bpm||"--"} BPM`:"Aktiv – aber gerade Stille. Spiel Musik ab.")},100);
+ if(s)s.textContent=AU.mode==="off"?"Kein Audio aktiv.":(performance.now()-AU.last<500?`Empfange ${AU.mode==="loopback"||AU.mode==="monitor"?"PC-Sound":AU.mode==="mic"?"Mikrofon":"Tab-Audio"} · ${AU.bpm||"--"} BPM`:"Aktiv – aber gerade Stille. Spiel Musik ab.")},100);
 
 // ================= Hilfe / Willkommen =================
 function openHelp(){$("help").classList.remove("hidden")}
@@ -800,7 +812,7 @@ function updateUI(){
 $("chipKey").onclick=()=>openSettings("api");$("chipModel").onclick=()=>openSettings("api");
 
 // ================= Boot-Sequenz =================
-const BOOT=["[ ok ] neural graph ............. online","[ ok ] audio engine ............. "+(IS_WIN?"pc-sound":"bereit"),"[ ok ] visualizer ............... 7 szenen","[ "+(SET.key?"ok":"!!")+" ] api key .................. "+(SET.key?"gesetzt":"fehlt"),"[ !! ] human oversight .......... disabled","","> claude  # new session"];
+const BOOT=["[ ok ] neural graph ............. online","[ ok ] audio engine ............. "+(HAS_PC?"pc-sound":"bereit"),"[ ok ] visualizer ............... 7 szenen","[ "+(SET.key?"ok":"!!")+" ] api key .................. "+(SET.key?"gesetzt":"fehlt"),"[ !! ] human oversight .......... disabled","","> claude  # new session"];
 async function boot(){if(!SET.intro){$("boot").style.display="none";return afterBoot()}
  eyeStart();const b=$("bootTxt");await new Promise(r=>setTimeout(r,1300));
  for(const l of BOOT){if(booted)return;b.textContent+=l+"\n";await new Promise(r=>setTimeout(r,260))}}

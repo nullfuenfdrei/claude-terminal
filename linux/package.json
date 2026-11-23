@@ -1,0 +1,7 @@
+{
+  "name": "claude-terminal",
+  "productName": "Claude Terminal",
+  "version": "2.0.0",
+  "description": "Chat mit Claude im Hacker-Look + Live-Musik-Visualizer",
+  "main": "main.js"
+}

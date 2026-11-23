@@ -4,3 +4,6 @@ windows/obj/
 ios/build/
 ios/*.xcodeproj/
 *.ipa
+linux/pkg/
+linux/src/
+linux/*.pkg.tar.zst
