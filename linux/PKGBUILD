@@ -1,7 +1,7 @@
 # Maintainer: nullfuenfdrei
 pkgname=claude-terminal
 pkgver=2.0.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Chat mit Claude im Hacker-Look + Live-Musik-Visualizer"
 arch=('any')
 url="https://github.com/nullfuenfdrei/claude-terminal"
@@ -20,5 +20,7 @@ package() {
   install -Dm644 "$src/../AppIcon.png"  "$dst/icon.png"
   install -Dm644 "$src/../AppIcon.png"  "$pkgdir/usr/share/pixmaps/claude-terminal.png"
   install -Dm755 "$src/claude-terminal.sh"      "$pkgdir/usr/bin/claude-terminal"
+  ln -s claude-terminal "$pkgdir/usr/bin/c4"   # Kurzbefehl
+  ln -s claude-terminal "$pkgdir/usr/bin/C4"
   install -Dm644 "$src/claude-terminal.desktop" "$pkgdir/usr/share/applications/claude-terminal.desktop"
 }
