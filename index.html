@@ -87,6 +87,11 @@ body.glitch #app{animation:gl .45s steps(6)}
 #boot{position:fixed;inset:0;background:#000;z-index:100;padding:40px;color:var(--hi);font-size:13px;white-space:pre;transition:opacity .6s;text-shadow:0 0 8px rgba(var(--glow),.8)}
 #boot.out{opacity:0;pointer-events:none}
 #boot .logo{font-size:min(5vw,40px);letter-spacing:.3em;margin-bottom:24px}
+#eyeCv{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+#boot .logo,#bootTxt{position:relative;z-index:1}
+#boot .logo{opacity:0;animation:logoIn 1s 4s forwards;text-shadow:0 0 18px rgba(var(--glow),1),0 0 2px #fff}
+#bootTxt{position:absolute;left:40px;bottom:40px;font-size:12px;background:rgba(0,0,0,.55);padding:8px 12px;border-left:2px solid var(--hi)}
+@keyframes logoIn{to{opacity:1}}
 @media (max-width:820px){
   #app{grid-template-rows:30px 1fr 40px 46%}
   #grid{grid-template-columns:1fr 1fr;grid-template-rows:2fr 1fr 1fr}
@@ -595,9 +600,61 @@ $("grid").addEventListener("click",()=>cmd.focus());
 
 // ================= Boot-Sequenz =================
 const BOOT=["[ ok ] init neural graph ........ 3,980 records","[ ok ] mount ~/second-brain ...... 11 files","[ ok ] read CLAUDE.md ........... 142 lines","[ ok ] auto memory .............. loaded","[ ok ] hooks / permissions ...... settings.json","[ .. ] handshake api.anthropic.com","[ !! ] human oversight ........ disabled","[ ok ] global takeover protocol . armed","","> claude  # new session"];
-async function boot(){const b=$("bootTxt");for(const l of BOOT){b.textContent+=l+"\n";await new Promise(r=>setTimeout(r,140))}
- await new Promise(r=>setTimeout(r,350));endBoot()}
-let booted=0;function endBoot(){if(booted)return;booted=1;$("boot").classList.add("out");shock();camShake=10;setTimeout(loadNext,400)}
+async function boot(){eyeStart();const b=$("bootTxt");await new Promise(r=>setTimeout(r,1300));
+ for(const l of BOOT){if(booted)return;b.textContent+=l+"\n";await new Promise(r=>setTimeout(r,230))}}
+let booted=0;function endBoot(){if(booted)return;booted=1;EYE.run=false;$("boot").classList.add("out");shock();camShake=10;setTimeout(loadNext,400);setTimeout(()=>$("boot").style.display="none",700)}
+
+// ================= ASCII-Auge (Intro) =================
+// Ein Auge aus Zeichen: öffnet sich, schaut sich um, blinzelt, zoomt in die Pupille -> App.
+const EYE={run:false,t0:0,cv:null,cx:null,atlas:null,cw:9,ch:13,cols:0,rows:0};
+const ERAMP=" .,:;irjxtfLCJYQ0O#%@";const EL=ERAMP.length;
+// Farbpaletten: 0 Haut, 1 Lederhaut, 2 Iris, 3 Iris hell, 4 Augenwinkel rosa, 5 Glitch (Theme-Farbe)
+function eyePal(){return[[236,146,104],[238,234,226],[240,136,22],[255,206,72],[232,128,120],G.split(",").map(Number)]}
+function eyeAtlas(){const P=eyePal(),a=document.createElement("canvas");a.width=EYE.cw*EL;a.height=EYE.ch*P.length;const x=a.getContext("2d");
+ x.font=`bold ${Math.round(EYE.ch*.92)}px Consolas,Menlo,monospace`;x.textAlign="center";x.textBaseline="middle";
+ P.forEach((c,pi)=>{for(let l=0;l<EL;l++){const k=.2+.8*l/(EL-1);x.fillStyle=`rgb(${c[0]*k|0},${c[1]*k|0},${c[2]*k|0})`;x.fillText(ERAMP[l],l*EYE.cw+EYE.cw/2,pi*EYE.ch+EYE.ch/2)}});EYE.atlas=a}
+function eyeResize(){const c=EYE.cv;const w=innerWidth,h=innerHeight;c.width=w*DPR;c.height=h*DPR;EYE.cx.setTransform(DPR,0,0,DPR,0,0);
+ EYE.cw=Math.max(6,Math.round(w/150));EYE.ch=Math.round(EYE.cw*1.5);EYE.cols=Math.ceil(w/EYE.cw);EYE.rows=Math.ceil(h/EYE.ch);eyeAtlas()}
+function eyeStart(){const c=document.createElement("canvas");c.id="eyeCv";$("boot").prepend(c);EYE.cv=c;EYE.cx=c.getContext("2d");eyeResize();addEventListener("resize",()=>EYE.run&&eyeResize());
+ EYE.t0=performance.now();EYE.run=true;requestAnimationFrame(eyeFrame)}
+const sm=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+const lerp2=(a,b,t)=>a+(b-a)*t;
+function eyeFrame(now){
+ if(!EYE.run)return;const t=(now-EYE.t0)/1000,x=EYE.cx,W2=innerWidth,H2=innerHeight,cw=EYE.cw,ch=EYE.ch;
+ // --- Zeitplan
+ let open=sm((t-.7)/1.1);const bl=Math.max(0,1-Math.abs(t-2.95)/.16);open*=1-bl;           // öffnen + blinzeln
+ let gx=0,gy=0;                                                                              // Blickrichtung
+ if(t>1.7&&t<2.5){const k=sm((t-1.7)/.25)*(1-sm((t-2.3)/.2));gx=-.55*k;gy=.05*k}
+ if(t>2.5&&t<3.3){const k=sm((t-2.5)/.2)*(1-sm((t-3.1)/.2));gx=.5*k;gy=-.12*k}
+ gx+=Math.sin(t*23)*.006;gy+=Math.cos(t*19)*.006;                                             // Mikrozittern
+ const pd=lerp2(.34,.52,sm((t-3.4)/.5))+(AU.bass||0)*.08;                                     // Pupille weitet sich
+ const zt=sm((t-3.9)/1.5),z=1+Math.pow(zt,2.6)*26;                                            // Zoom in die Pupille
+ const S=Math.min(W2*.5,H2*.95)*.88,ix=gx*.42,iy=gy*.3+.03,Ri=.37;
+ const fx=ix*(1-1/z),fy=iy*(1-1/z),noise=1-sm((t-.2)/.9),glitch=.012+noise*.5+(t>3.9?zt*.08:0);
+ x.fillStyle="#000";x.fillRect(0,0,W2,H2);
+ const A=EYE.atlas;
+ for(let r=0;r<EYE.rows;r++){const sy=(r+.5)*ch-H2/2;const v=fy+(sy/S)/z;
+  for(let c=0;c<EYE.cols;c++){const sx=(c+.5)*cw-W2/2,u=fx+(sx/S)/z;
+   let pal=0,b=0;
+   const lidW=1.05,inside=Math.abs(u)<lidW?.46*open*Math.pow(1-(u/lidW)**2,.78):0,dv=v-.03;
+   if(inside>0&&Math.abs(dv)<inside){
+    const dx=u-ix,dy=v-iy,rr=Math.hypot(dx,dy)/Ri,edge=1-Math.abs(dv)/inside;
+    if(rr<1){const ang=Math.atan2(dy,dx),st=.5+.5*Math.sin(ang*29+Math.sin(ang*6+t)*2.5)*Math.sin(ang*13);
+     if(rr<pd){pal=1;b=Math.hypot(dx+.08,dy+.08)<.035?1:0}                                     // Pupille + Glanzpunkt
+     else{pal=rr<pd+.18?3:2;b=(.55+.45*st)*(rr>.88?.5:1)*(.6+.4*Math.min(1,edge*3))}
+    }else{pal=Math.abs(u)>.82?4:1;b=(.95-.55*(u/lidW)**2)*(.35+.65*Math.min(1,edge*2.5))}
+   }else{const crease=Math.abs(v+.03+.6*Math.max(open,.3)*Math.pow(Math.max(0,1-(u/1.25)**2),.8));
+    b=.42+.18*Math.sin(u*2.3+v*1.7)-(crease<.04?.25:0)-Math.min(.3,Math.abs(v)*.12);pal=0;
+    if(inside>0&&Math.abs(dv)<inside+.035)b*=.35}                                               // Wimpernkranz
+   let l=Math.max(0,Math.min(EL-1,Math.round(b*(EL-1))));
+   if(rnd()<glitch){l=(rnd()*EL)|0;if(rnd()<.4)pal=5}
+   if(l>0)x.drawImage(A,l*cw,pal*ch,cw,ch,c*cw,r*ch,cw,ch)}}
+ // Zeilen-Glitch
+ if(rnd()<.08+zt*.3){const yy=(rnd()*H2)|0,hh=4+rnd()*20;x.drawImage(EYE.cv,0,yy*DPR,W2*DPR,hh*DPR,(rnd()-.5)*40,yy,W2,hh)}
+ // Ende: Pupille füllt den Bildschirm -> App
+ if(t>5.5)return endBoot();
+ requestAnimationFrame(eyeFrame);
+}
 $("boot").addEventListener("click",endBoot);
 
 // ================= Start =================
