@@ -1,3 +1,8 @@
-// Sagt der Seite, dass sie in der Desktop-App läuft (für PC-Sound über PipeWire/PulseAudio)
-const { contextBridge } = require("electron");
-contextBridge.exposeInMainWorld("claudeHost", { app: "electron", platform: process.platform });
+// Brücke zwischen Seite und Desktop-App (PC-Sound-Erkennung + Abo-Modus über Claude Code)
+const { contextBridge, ipcRenderer } = require("electron");
+contextBridge.exposeInMainWorld("claudeHost", {
+  app: "electron",
+  platform: process.platform,
+  send: (msg) => ipcRenderer.send("host", msg),
+  onMessage: (cb) => ipcRenderer.on("host", (_e, msg) => cb(msg)),
+});

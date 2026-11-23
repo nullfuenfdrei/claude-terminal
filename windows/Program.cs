@@ -76,6 +76,19 @@ class MainForm : Form
             if (Uri.TryCreate(e.Uri, UriKind.Absolute, out var u) && (u.Scheme == "https" || u.Scheme == "http"))
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(u.ToString()) { UseShellExecute = true });
         };
+        // Abo-Modus: Nachrichten der Seite an Claude Code weiterreichen
+        cw.WebMessageReceived += (_, e) =>
+        {
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(e.WebMessageAsJson);
+                var r = doc.RootElement.Clone();
+                var t = r.TryGetProperty("t", out var tv) ? tv.GetString() : null;
+                if (t == "cc") ClaudeCodeBridge.Run(r, json => BeginInvoke(() => cw.PostWebMessageAsJson(json)));
+                else if (t == "cclogin") ClaudeCodeBridge.OpenLogin();
+            }
+            catch { }
+        };
         cw.Navigate("https://claude-terminal.app/index.html");
 
         // PC-Sound abgreifen und ~60x pro Sekunde an die Grafik schicken

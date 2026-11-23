@@ -205,7 +205,7 @@ body.glitch #app{animation:gl .45s steps(6)}
   <div class="mbody hbody">
     <p class="lead">Ein <b>Chat mit Claude</b>, der KI von Anthropic, im Hacker-Look, dazu ein <b>Live-Visualizer</b>, der zu deiner Musik tanzt.</p>
     <div class="steps">
-      <div><b>1</b><span><u>API-Key eintragen</u><br>Oben rechts auf ⚙ klicken. Dort steht auch, wie du einen Key bekommst. Ohne Key läuft nur die Grafik.</span></div>
+      <div><b>1</b><span><u>Verbinden</u><br>Oben rechts auf ⚙ klicken. Am PC wählst du <b>Claude-Abo</b> (läuft über dein Abo, kein Guthaben nötig). Auf dem iPhone trägst du einen API-Key ein. Ohne Verbindung läuft nur die Grafik.</span></div>
       <div><b>2</b><span><u>Mit Claude reden</u><br>Unten in die Zeile <i>&gt; claude</i> tippen und Enter drücken. Die Antwort erscheint links unten im Chat, live Wort für Wort.</span></div>
       <div><b>3</b><span><u>Szene wählen</u><br>Oben im Bild: World, Eye, Brain, Tunnel, Orb, Galaxy, Terrain oder Auto. Ziehen dreht, das Mausrad zoomt.</span></div>
       <div><b>4</b><span><u>Musik an</u><br>In der Windows- und Linux-App reagiert alles automatisch auf den Ton deines PCs. Auf dem iPhone stellst du unter ⚙ → Audio auf Mikrofon.</span></div>
@@ -332,7 +332,7 @@ async function startWebAudio(kind){
 }
 function stopAudio(){if(AU.stream)AU.stream.getTracks().forEach(t=>t.stop());if(AU.ctx)AU.ctx.close();Object.assign(AU,{an:null,ctx:null,stream:null,mode:"off",bpm:0});$("hud3").textContent="DRAG = ROTATE · WHEEL/PINCH = ZOOM · TAP NODE = LOAD"}
 // Windows-App liefert PC-Sound über WebView2-Messages
-if(window.chrome&&window.chrome.webview){window.chrome.webview.addEventListener("message",e=>{const d=e.data;if(d&&d.t==="audio"){if(!AU.blockLoop&&(AU.mode==="off"||AU.mode==="loopback")){AU.mode="loopback";feedRaw(d.b,d.w)}}})}
+if(window.chrome&&window.chrome.webview){window.chrome.webview.addEventListener("message",e=>{const d=e.data;if(d&&d.t==="cc"){ccOn(d);return}if(d&&d.t==="audio"){if(!AU.blockLoop&&(AU.mode==="off"||AU.mode==="loopback")){AU.mode="loopback";feedRaw(d.b,d.w)}}})}
 
 function spawnPacket(target){packets.push({to:target||P[Math.floor(rnd()*P.length)],t:0,v:.008+rnd()*.02})}
 function shock(){waves.push({t:0})}
@@ -596,7 +596,7 @@ function drawRadar(now){radarAng+=.017+AU.bass*.12;if(!RW)return;const cxr=RW/2,
 
 // ================= Einstellungen =================
 const store={get:k=>{try{return localStorage.getItem(k)||""}catch(e){return""}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
-const DEF={key:"",model:"claude-sonnet-5-5",persona:"standard",maxTok:1024,theme:"red",scene:"world",autoSec:25,quality:"high",panels:true,fx:true,shake:true,intro:true,audio:"auto",gain:1};
+const DEF={backend:"",key:"",model:"claude-sonnet-5-5",persona:"standard",maxTok:1024,theme:"red",scene:"world",autoSec:25,quality:"high",panels:true,fx:true,shake:true,intro:true,audio:"auto",gain:1};
 var SET=Object.assign({},DEF);
 try{Object.assign(SET,JSON.parse(store.get("settings")||"{}"))}catch(e){}
 if(!store.get("settings")){ // alte Einzel-Einstellungen übernehmen
@@ -622,7 +622,7 @@ setInterval(()=>{if(AU.on&&AU.last&&performance.now()-AU.last<500)return;[...M.c
 function updateStats(){
  const S=$("stat");if(!S)return;const lvl=Math.round(AU.lvl*10),src=AU.mode==="off"?"aus":AU.mode==="loopback"||AU.mode==="monitor"?"PC-Sound":AU.mode==="mic"?"Mikrofon":"Tab/Screen";
  S.innerHTML=[
-  ["API-KEY",SET.key?'<b class="okc">✓ gesetzt</b>':'<b class="bad" data-open="api">✗ fehlt – hier klicken</b>'],
+  useAbo()?["VERBINDUNG",'<b class="okc">Claude-Abo</b>']:["API-KEY",SET.key?'<b class="okc">✓ gesetzt</b>':'<b class="bad" data-open="api">✗ fehlt – hier klicken</b>'],
   ["MODELL",(MODELS.find(m=>m[0]===SET.model)||[SET.model,SET.model])[1].split(" –")[0]],
   ["MODUS",PERSONAS[SET.persona][0]],
   ["NACHRICHTEN",STATS.msgs],
@@ -667,7 +667,7 @@ Befehle:
  scene:a=>{if(!a[0])return out("Szenen: "+SCENE_LIST.join(", ")+", auto","s");setScene(a[0])?out("Szene → "+a[0],"o"):out("Gibt es nicht: "+a[0],"e")},
  panels:()=>{SET.panels=!SET.panels;saveSet();applyLook()},
  clear:()=>log.innerHTML="",
- "/clear":()=>{convo.length=0;out("Neues Gespräch – Claude hat den bisherigen Verlauf vergessen.","o")},
+ "/clear":()=>{convo.length=0;CC.session=null;out("Neues Gespräch – Claude hat den bisherigen Verlauf vergessen.","o")},
 };
 
 function setBusy(b){busy=b?1:0;$("mode").textContent=b?"CLAUDE DENKT…":"BEREIT";$("mode").classList.toggle("busy",b);if(b)shock()}
@@ -691,10 +691,34 @@ async function callClaude(messages,maxTok,onText){
    else if(d.type==="message_delta"&&d.usage)outT=d.usage.output_tokens||outT;
    else if(d.type==="error")throw new Error(d.error&&d.error.message||"Stream-Fehler")}}
  return{txt,inT,outT}}
+// ===== Abo-Modus: Chat über Claude Code auf dem PC (Windows-/Linux-App) =====
+const CC={pending:new Map(),session:null};
+const useAbo=()=>SET.backend==="abo"&&HAS_PC;
+const ready=()=>useAbo()||!!SET.key;
+function hostSend(o){if(IS_WIN)window.chrome.webview.postMessage(o);else if(IS_DESK)window.claudeHost.send(o)}
+if(window.claudeHost&&window.claudeHost.onMessage)window.claudeHost.onMessage(d=>{if(d&&d.t==="cc")ccOn(d)});
+function ccOn(d){const p=CC.pending.get(d.id);if(!p)return;if(d.line!==undefined)p.line(d.line);else if(d.exit!==undefined)p.exit(d.exit,d.err)}
+function ccErr(m){m=String(m||"");
+ if(/authenticat|log ?in|oauth|not logged|credentials/i.test(m))return"Claude Code ist nicht angemeldet. ⚙ → 'Bei Claude Code anmelden' klicken und im Fenster mit deinem Abo-Account einloggen.";
+ if(/ENOENT|nicht gefunden|not found|not recognized/i.test(m))return"Claude Code ist nicht installiert. Windows: winget install Anthropic.ClaudeCode · Arch: curl -fsSL https://claude.ai/install.sh | bash";
+ if(/usage limit|rate limit|limit reached|5-hour|weekly/i.test(m))return"Abo-Limit erreicht – später nochmal versuchen. ("+m.slice(0,120)+")";
+ return m.slice(0,300)||"Claude Code hat nicht geantwortet."}
+const CC_MODEL={"claude-sonnet-5-5":"sonnet","claude-opus-5-5":"opus","claude-haiku-5-5":"haiku"};
+function callAbo(prompt,onText,opts){opts=opts||{};return new Promise((res,rej)=>{const id=Math.random().toString(36).slice(2);let txt="",full="",done=false;
+ CC.pending.set(id,{line:l=>{let d;try{d=JSON.parse(l)}catch(e){return}
+   if(d.type==="system"&&d.subtype==="init"&&d.session_id&&!opts.fresh)CC.session=d.session_id;
+   else if(d.type==="stream_event"&&d.event&&d.event.type==="content_block_delta"&&d.event.delta&&d.event.delta.type==="text_delta"){txt+=d.event.delta.text;onText&&onText(txt)}
+   else if(d.type==="assistant"&&d.message){const t=(d.message.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("");if(t){full=t;if(!txt&&onText)onText(t)}}
+   else if(d.type==="result"){done=true;CC.pending.delete(id);if(d.is_error){if(!opts.fresh)CC.session=null;rej(new Error(ccErr(d.result||full)))}
+    else{if(d.session_id&&!opts.fresh)CC.session=d.session_id;const u=d.usage||{};res({txt:d.result||txt||full,inT:(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),outT:u.output_tokens||0})}}},
+  exit:(code,err)=>{if(done)return;CC.pending.delete(id);rej(new Error(ccErr(err||("Claude Code beendet (Code "+code+")"))))}});
+ hostSend({t:"cc",id,prompt,model:CC_MODEL[SET.model]||"",system:PERSONAS[SET.persona][1],resume:opts.fresh?"":(CC.session||"")})})}
+
 async function ask(q){
- if(!SET.key){out("Dafür brauchst du zuerst einen API-Key → öffne ⚙ Einstellungen.","e");openSettings("api");return}
+ if(!ready()){out(HAS_PC?"Erst verbinden → ⚙ Einstellungen: 'Claude-Abo' wählen (oder API-Key eintragen).":"Dafür brauchst du zuerst einen API-Key → öffne ⚙ Einstellungen.","e");openSettings("api");return}
  convo.push({role:"user",content:q});setBusy(true);const line=out("◆ ▌","a");let n=0;
- try{const r=await callClaude(convo,SET.maxTok,t=>{line.textContent="◆ "+t+"▌";log.scrollTop=log.scrollHeight;if(++n%6===0)spawnPacket()});
+ const onT=t=>{line.textContent="◆ "+t+"▌";log.scrollTop=log.scrollHeight;if(++n%6===0)spawnPacket()};
+ try{const r=useAbo()?await callAbo(q,onT):await callClaude(convo,SET.maxTok,onT);
   line.textContent="◆ "+(r.txt||"(leere Antwort)");convo.push({role:"assistant",content:r.txt});
   STATS.msgs++;STATS.inTok+=r.inT;STATS.outTok+=r.outT;STATS.hist.push(r.inT+r.outT);camShake=8;if(SCENE==="brain")setFocus(Math.floor(rnd()*FILES.length));
  }catch(e){convo.pop();line.remove();out("✗ "+(e instanceof TypeError?"Keine Verbindung zu api.anthropic.com – Internet prüfen.":e.message),"e")}
@@ -730,12 +754,21 @@ $("ptog").addEventListener("click",e=>{e.stopPropagation();SET.panels=!SET.panel
 function opt(list,val){return list.map(([v,l])=>`<option value="${v}"${v==val?" selected":""}>${l}</option>`).join("")}
 function tgl(id,label,on,hint){return`<label class="tg"><input type="checkbox" id="${id}"${on?" checked":""}><i></i><span>${label}${hint?`<small>${hint}</small>`:""}</span></label>`}
 function renderSettings(){
+ const abo=useAbo();
  $("pane-api").innerHTML=`
+  ${HAS_PC?`<div class="fld"><label>WIE SOLL CLAUDE ANTWORTEN?</label>
+   <label class="rd"><input type="radio" name="sConn" value="abo"${abo?" checked":""}><i></i><span>Mit meinem Claude-Abo (empfohlen)<small>Läuft über Claude Code auf diesem PC – kein API-Key, kein Guthaben. Zählt zu den Limits deines Abos (Pro/Max).</small></span></label>
+   <label class="rd"><input type="radio" name="sConn" value="api"${abo?"":" checked"}><i></i><span>Mit API-Key<small>Eigener Key von console.anthropic.com, wird pro Nutzung abgerechnet (Guthaben nötig).</small></span></label></div>
+  <div id="aboBox" style="display:${abo?"block":"none"}">
+   <div class="info"><b>Einmalig einrichten:</b> Claude Code muss auf diesem PC installiert und mit deinem Abo-Account angemeldet sein. Klick auf <i>Bei Claude Code anmelden</i> – es öffnet sich ein Fenster, dort einloggen und danach schließen. Dann <i>TESTEN</i>.</div>
+   <div class="keyrow"><button class="btn wide" id="sLogin">BEI CLAUDE CODE ANMELDEN</button><button class="btn hi" id="sAboTest">TESTEN</button></div>
+   <div id="sAboStat" class="stat"></div><br></div>`:""}
+  <div id="apiBox" style="display:${abo?"none":"block"}">
   <div class="fld"><label>API-KEY</label>
    <div class="keyrow"><input id="sKey" type="password" placeholder="sk-ant-..." value="${SET.key.replace(/"/g,"")}" autocomplete="off" autocapitalize="off" spellcheck="false">
    <button class="btn" id="sShow" title="anzeigen">👁</button><button class="btn hi" id="sTest">TESTEN</button></div>
    <div id="sKeyStat" class="stat">${SET.key?"Key gespeichert – drück TESTEN, um ihn zu prüfen.":"Noch kein Key eingetragen."}</div></div>
-  <div class="info"><b>So bekommst du einen Key:</b> Auf <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> anmelden → <i>Settings → Billing</i> Guthaben aufladen (ein paar Euro reichen lange) → <i>API Keys → Create Key</i> → Key kopieren und oben einfügen.<br><br>Der Key bleibt <b>nur auf diesem Gerät</b> und wird nur an api.anthropic.com geschickt. Ein Claude-Abo (Pro/Max) zählt hier nicht – die API wird extra abgerechnet.</div>
+  <div class="info"><b>So bekommst du einen Key:</b> Auf <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> anmelden → <i>Settings → Billing</i> Guthaben aufladen (ein paar Euro reichen lange) → <i>API Keys → Create Key</i> → Key kopieren und oben einfügen.<br><br>Der Key bleibt <b>nur auf diesem Gerät</b> und wird nur an api.anthropic.com geschickt. Ein Claude-Abo (Pro/Max) zählt hier nicht – die API wird extra abgerechnet.${HAS_PC?" Mit Abo nimm oben lieber <b>Claude-Abo</b>.":""}</div></div>
   <div class="fld"><label>MODELL</label><select id="sModel">${opt(MODELS,SET.model)}</select></div>
   <div class="fld"><label>CLAUDES ART ZU ANTWORTEN</label><select id="sPersona">${opt(Object.entries(PERSONAS).map(([k,v])=>[k,v[0]]),SET.persona)}</select></div>
   <div class="fld"><label>MAX. ANTWORTLÄNGE</label><select id="sMax">${opt([[512,"Kurz (512 Tokens)"],[1024,"Normal (1024)"],[2048,"Lang (2048)"],[4096,"Sehr lang (4096)"]],SET.maxTok)}</select></div>`;
@@ -760,6 +793,11 @@ function renderSettings(){
   <div class="info">Claude Terminal · v2 · Chat mit Claude (Anthropic) + Live-Visualizer.<br>Alles wird nur lokal gespeichert. Nachrichten gehen direkt an api.anthropic.com.</div>`;
  wireSettings()}
 function wireSettings(){
+ document.querySelectorAll("input[name=sConn]").forEach(r=>r.onchange=()=>{SET.backend=r.value;saveSet();$("aboBox").style.display=r.value==="abo"?"block":"none";$("apiBox").style.display=r.value==="abo"?"none":"block"});
+ if($("sLogin")){$("sLogin").onclick=()=>{hostSend({t:"cclogin"});$("sAboStat").textContent="Anmelde-Fenster geöffnet. Nach dem Login dort schließen und hier TESTEN drücken.";$("sAboStat").className="stat"};
+  $("sAboTest").onclick=async()=>{const st=$("sAboStat");st.textContent="Frage Claude Code…";st.className="stat";
+   try{const r=await callAbo("Antworte nur mit: OK",null,{fresh:true});st.textContent="✓ Läuft über dein Abo! Antwort: "+(r.txt||"").trim().slice(0,40);st.className="stat okc";out("✓ Claude-Abo verbunden – frag einfach los.","o")}
+   catch(e){st.textContent="✗ "+e.message;st.className="stat bad"}}}
  const key=$("sKey");const saveKey=()=>{const v=key.value.trim();if(v!==SET.key){SET.key=v;saveSet();$("sKeyStat").textContent=v?"Gespeichert. Drück TESTEN, um ihn zu prüfen.":"Key entfernt.";$("sKeyStat").className="stat"}};
  key.addEventListener("change",saveKey);key.addEventListener("keydown",e=>{if(e.key==="Enter"){saveKey();testKey()}});
  $("sShow").onclick=()=>{key.type=key.type==="password"?"text":"password"};
@@ -773,7 +811,7 @@ function wireSettings(){
  document.querySelectorAll("input[name=sAud]").forEach(r=>r.onchange=()=>{SET.audio=r.value;saveSet();applyAudio(true)});
  $("sGain").oninput=e=>{SET.gain=+e.target.value;$("sGainV").textContent=SET.gain.toFixed(1)+"×";saveSet()};
  $("dClear").onclick=()=>{log.innerHTML="";toast("Chat-Anzeige geleert")};
- $("dReset").onclick=()=>{convo.length=0;out("Neues Gespräch – Claude hat den bisherigen Verlauf vergessen.","o");toast("Neues Gespräch")};
+ $("dReset").onclick=()=>{convo.length=0;CC.session=null;out("Neues Gespräch – Claude hat den bisherigen Verlauf vergessen.","o");toast("Neues Gespräch")};
  $("dKey").onclick=()=>{SET.key="";saveSet();renderSettings();toast("API-Key gelöscht")};
  $("dAll").onclick=()=>{const k=SET.key;SET=Object.assign({},DEF,{key:k});saveSet();setTheme(SET.theme,true);setScene(SET.scene,true);applyLook();applyAudio();renderSettings();toast("Einstellungen zurückgesetzt (Key behalten)")};
 }
@@ -793,7 +831,7 @@ setInterval(()=>{if($("modal").classList.contains("hidden"))return;const m=$("sM
 // ================= Hilfe / Willkommen =================
 function openHelp(){$("help").classList.remove("hidden")}
 function closeHelp(){$("help").classList.add("hidden");store.set("welcomed","1")}
-$("hClose").onclick=closeHelp;$("hGo").onclick=()=>{closeHelp();if(!SET.key)openSettings("api");else cmd.focus()};
+$("hClose").onclick=closeHelp;$("hGo").onclick=()=>{closeHelp();if(!ready())openSettings("api");else cmd.focus()};
 $("help").addEventListener("click",e=>{if(e.target.id==="help")closeHelp()});
 $("bHelp").onclick=openHelp;$("bSet").onclick=()=>openSettings();
 function toast(t){const d=$("toast");d.textContent=t;d.classList.add("on");clearTimeout(d._t);d._t=setTimeout(()=>d.classList.remove("on"),1800)}
@@ -805,19 +843,19 @@ addEventListener("keydown",e=>{
 
 // ================= Kopfzeile =================
 function updateUI(){
- const k=$("chipKey");k.textContent=SET.key?"● KEY OK":"● KEIN KEY";k.className="chip "+(SET.key?"okc":"bad");
+ const k=$("chipKey");k.textContent=useAbo()?"● ABO":SET.key?"● KEY OK":"● NICHT VERBUNDEN";k.className="chip "+(ready()?"okc":"bad");
  $("chipModel").textContent=(MODELS.find(m=>m[0]===SET.model)||[0,SET.model])[1].split(" –")[0].toUpperCase()+" · "+PERSONAS[SET.persona][0].toUpperCase();
- cmd.placeholder=SET.key?"Frag Claude etwas … (Enter)   ·   'help' für Befehle":"Erst API-Key eintragen → ⚙ oben rechts   ·   'help' für Befehle";
+ cmd.placeholder=ready()?"Frag Claude etwas … (Enter)   ·   'help' für Befehle":(HAS_PC?"Erst verbinden → ⚙ oben rechts (Claude-Abo oder API-Key)":"Erst API-Key eintragen → ⚙ oben rechts")+"   ·   'help' für Befehle";
 }
 $("chipKey").onclick=()=>openSettings("api");$("chipModel").onclick=()=>openSettings("api");
 
 // ================= Boot-Sequenz =================
-const BOOT=["[ ok ] neural graph ............. online","[ ok ] audio engine ............. "+(HAS_PC?"pc-sound":"bereit"),"[ ok ] visualizer ............... 7 szenen","[ "+(SET.key?"ok":"!!")+" ] api key .................. "+(SET.key?"gesetzt":"fehlt"),"[ !! ] human oversight .......... disabled","","> claude  # new session"];
+const BOOT=["[ ok ] neural graph ............. online","[ ok ] audio engine ............. "+(HAS_PC?"pc-sound":"bereit"),"[ ok ] visualizer ............... 7 szenen","[ "+(SET.key||SET.backend==="abo"?"ok":"!!")+" ] verbindung ............... "+(SET.backend==="abo"?"claude-abo":SET.key?"api-key":"fehlt"),"[ !! ] human oversight .......... disabled","","> claude  # new session"];
 async function boot(){if(!SET.intro){$("boot").style.display="none";return afterBoot()}
  eyeStart();const b=$("bootTxt");await new Promise(r=>setTimeout(r,1300));
  for(const l of BOOT){if(booted)return;b.textContent+=l+"\n";await new Promise(r=>setTimeout(r,260))}}
 let booted=0;function endBoot(){if(booted)return;booted=1;EYE.run=false;$("boot").classList.add("out");shock();camShake=10;setTimeout(()=>$("boot").style.display="none",700);afterBoot()}
-function afterBoot(){if(!store.get("welcomed")||!SET.key)setTimeout(openHelp,500)}
+function afterBoot(){if(!store.get("welcomed")||!ready())setTimeout(openHelp,500)}
 
 // ================= ASCII-Auge: gemeinsamer Renderer (Intro + Szene) =================
 const ERAMP=" .,:;irjxtfLCJYQ0O#%@";const EL=ERAMP.length;
@@ -891,12 +929,13 @@ SCENES.eye=(now,B,Mi,Hi,ON)=>{
 };
 
 // ================= Start =================
+if(!SET.backend)SET.backend=HAS_PC?"abo":"api";
 setTheme(SET.theme,true);applyLook();
 setScene(SET.scene||"world",true);
 applyAudio();updateUI();updateStats();
 resize();
 out("Claude Terminal bereit.","s");
-out(SET.key?"Frag Claude einfach etwas – unten tippen und Enter.":"Noch kein API-Key → ⚙ oben rechts. 'help' zeigt alles, was geht.","o");
+out(ready()?"Frag Claude einfach etwas – unten tippen und Enter.":"Noch nicht verbunden → ⚙ oben rechts. 'help' zeigt alles, was geht.","o");
 requestAnimationFrame(draw);boot();
 if(matchMedia("(pointer:fine)").matches)cmd.focus();
 </script>
