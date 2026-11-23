@@ -74,7 +74,7 @@ static class ClaudeCodeBridge
     public static void OpenLogin()
     {
         var exe = FindClaude();
-        var cmd = exe != null ? $"\"{exe}\"" : "echo Claude Code ist nicht installiert. Installieren mit: winget install Anthropic.ClaudeCode";
+        var cmd = exe != null ? $"\"{exe}\" auth login --claudeai" : "echo Claude Code ist nicht installiert. Installieren mit: winget install Anthropic.ClaudeCode";
         Process.Start(new ProcessStartInfo("cmd.exe", $"/k title Claude Code Anmeldung & echo Melde dich an (Abo-Account) und schliesse danach dieses Fenster. & {cmd}") { UseShellExecute = true });
     }
 }

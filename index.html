@@ -205,7 +205,7 @@ body.glitch #app{animation:gl .45s steps(6)}
   <div class="mbody hbody">
     <p class="lead">Ein <b>Chat mit Claude</b>, der KI von Anthropic, im Hacker-Look, dazu ein <b>Live-Visualizer</b>, der zu deiner Musik tanzt.</p>
     <div class="steps">
-      <div><b>1</b><span><u>Verbinden</u><br>Oben rechts auf ⚙ klicken. Am PC wählst du <b>Claude-Abo</b> (läuft über dein Abo, kein Guthaben nötig). Auf dem iPhone trägst du einen API-Key ein. Ohne Verbindung läuft nur die Grafik.</span></div>
+      <div><b>1</b><span><u>Verbinden</u><br>Oben rechts auf ⚙ klicken. Am PC wählst du <strong>Claude-Abo</strong> (läuft über dein Abo, kein Guthaben nötig). Auf dem iPhone trägst du einen API-Key ein. Ohne Verbindung läuft nur die Grafik.</span></div>
       <div><b>2</b><span><u>Mit Claude reden</u><br>Unten in die Zeile <i>&gt; claude</i> tippen und Enter drücken. Die Antwort erscheint links unten im Chat, live Wort für Wort.</span></div>
       <div><b>3</b><span><u>Szene wählen</u><br>Oben im Bild: World, Eye, Brain, Tunnel, Orb, Galaxy, Terrain oder Auto. Ziehen dreht, das Mausrad zoomt.</span></div>
       <div><b>4</b><span><u>Musik an</u><br>In der Windows- und Linux-App reagiert alles automatisch auf den Ton deines PCs. Auf dem iPhone stellst du unter ⚙ → Audio auf Mikrofon.</span></div>
@@ -355,6 +355,7 @@ function draw(now){
  if(SEL==="auto"&&now-autoT>SET.autoSec*1000)nextAuto();
  if(SCENE==="brain")$("hud2").innerHTML=`AZ ${(((az*57.3)%360)+360)%360|0}.${(az*573|0)%10}° · EL ${(el*57.3).toFixed(1)}°<br>ZOOM ${zoom.toFixed(2)}`;
  const s=Math.floor((now-t0)/1000);$("clock").textContent=new Date(s*1000).toISOString().substr(11,8)+" · "+fps+"FPS";
+ drawAgents(now);
  drawRadar(now);
  requestAnimationFrame(draw);
 }
@@ -506,6 +507,84 @@ SCENES.world=(now,B,Mi,Hi,ON)=>{
  $("hud2").innerHTML=`ORBIT ${(((az*57.3)%360)+360)%360|0}° · HQ SF<br>THREAT LEVEL: <b style="color:rgb(${G2})">MAXIMUM</b>`;
 };
 
+// ================= Agenten-Overlay: zeigt live, was Claude gerade macht =================
+// Phasen: idle → think (wartet auf erste Wörter) → write (Antwort streamt) → done / error
+const AG={phase:"idle",t0:0,a:0,words:[],tok:0,lastTxt:"",log:[],pk:[],hex:[],hexT:0,flash:null};
+const AG_DEF=[["AGENT-01","PARSE","liest deine Frage"],["AGENT-02","CONTEXT","lädt den Verlauf"],["AGENT-03","REASON","denkt nach"],
+ ["AGENT-04","RECALL","durchsucht Wissen"],["AGENT-05","COMPOSE","formuliert Antwort"],["AGENT-06","VERIFY","prüft die Antwort"]];
+AG.agents=AG_DEF.map(([id,role,desc],i)=>({id,role,desc,x:.3+rnd()*.4,y:.3+rnd()*.35,tx:.5,ty:.5,prog:0,trail:[],hue:i%2}));
+function agLog(t){AG.log.push({t,at:performance.now()});if(AG.log.length>6)AG.log.shift()}
+function agPhase(p){const now=performance.now();AG.phase=p;AG.t0=now;
+ if(p==="think"){AG.tok=0;AG.lastTxt="";AG.words.length=0;AG.agents.forEach(a=>a.prog=0);AG.log.length=0;
+  agLog("> verbinde mit claude "+(useAbo()?"(abo)":"(api)")+" ... ok");agLog("> agenten gestartet: 6");agLog("> analysiere anfrage ...")}
+ if(p==="write"){agLog("> stream offen – schreibe antwort");AG.agents.forEach(a=>a.prog=Math.max(a.prog,.35))}
+ if(p==="done"){agLog("> antwort fertig · "+AG.tok+" tokens · "+((now-AG.start)/1000).toFixed(1)+"s");AG.flash={t:"ACCESS GRANTED",at:now,ok:1};AG.agents.forEach(a=>a.prog=1)}
+ if(p==="error"){agLog("> verbindung abgelehnt");AG.flash={t:"ACCESS DENIED",at:now,ok:0}}
+ if(p==="think")AG.start=now}
+function agText(t){const nw=t.slice(AG.lastTxt.length);AG.lastTxt=t;if(!nw)return;AG.tok+=Math.max(1,Math.round(nw.length/4));
+ nw.split(/\s+/).filter(Boolean).forEach(w=>{const a=AG.agents[4+((rnd()*2)|0)];AG.words.push({w:w.slice(0,22),x:a.x,y:a.y,vx:(rnd()-.5)*.003,vy:-.0015-rnd()*.003,life:1})});
+ if(AG.words.length>70)AG.words.splice(0,AG.words.length-70);
+ for(let i=0;i<3;i++){const a=(rnd()*6)|0,b=(rnd()*6)|0;if(a!==b)AG.pk.push({a,b,t:0})}}
+function hexLine(){let s="";for(let i=0;i<4;i++)s+=((rnd()*65536)|0).toString(16).padStart(4,"0")+" ";return s.toUpperCase()}
+function drawAgents(now){
+ const on=AG.phase==="think"||AG.phase==="write",since=now-AG.t0;
+ const target=on?1:(AG.phase==="done"||AG.phase==="error")?Math.max(0,1-since/2600):0;
+ AG.a+=(target-AG.a)*.08;if(AG.a<.01){AG.a=0;return}
+ const A=AG.a,writing=AG.phase==="write",cxr=W/2,cyr=H*.46,small=W<620;
+ cx.save();cx.globalCompositeOperation="source-over";
+ // leicht abdunkeln, damit die Agenten lesbar sind
+ cx.fillStyle=`rgba(0,0,0,${.28*A})`;cx.fillRect(0,0,W,H);
+ // --- Hex-Spalten am Rand (FBI-Terminal)
+ if(!small){if(now-AG.hexT>(writing?40:90)){AG.hexT=now;AG.hex.unshift([hexLine(),hexLine()]);if(AG.hex.length>Math.ceil(H/13))AG.hex.pop()}
+  cx.font="10px Consolas,Menlo,monospace";cx.fillStyle=`rgba(${G},${.28*A})`;
+  AG.hex.forEach((l,i)=>{cx.fillText(l[0],8,H-12-i*13);cx.fillText(l[1],W-cx.measureText(l[1]).width-8,H-12-i*13)})}
+ // --- Agenten bewegen
+ const spd=writing?.035:.018;
+ AG.agents.forEach((a,i)=>{if(Math.hypot(a.tx-a.x,a.ty-a.y)<.02){a.tx=.18+rnd()*.64;a.ty=.16+rnd()*.6}
+  a.x+=(a.tx-a.x)*spd;a.y+=(a.ty-a.y)*spd;a.trail.push([a.x,a.y]);if(a.trail.length>18)a.trail.shift();
+  const goal=AG.phase==="think"?(i<4?.3:.08):writing?Math.min(.98,.35+AG.tok/(60+i*25)):a.prog;a.prog+=(goal-a.prog)*.04});
+ cx.globalCompositeOperation="lighter";
+ // --- Netz zwischen den Agenten + zum Kern
+ cx.lineWidth=1;
+ for(let i=0;i<6;i++)for(let j=i+1;j<6;j++){const a=AG.agents[i],b=AG.agents[j],d=Math.hypot((a.x-b.x)*W,(a.y-b.y)*H);
+  cx.strokeStyle=`rgba(${G},${Math.max(0,.35-d/1400)*A})`;cx.beginPath();cx.moveTo(a.x*W,a.y*H);cx.lineTo(b.x*W,b.y*H);cx.stroke()}
+ AG.agents.forEach(a=>{cx.setLineDash([4,6]);cx.lineDashOffset=-now/40;cx.strokeStyle=`rgba(${G2},${.25*A})`;cx.beginPath();cx.moveTo(a.x*W,a.y*H);cx.lineTo(cxr,cyr);cx.stroke()});cx.setLineDash([]);
+ // --- Datenpakete zwischen Agenten
+ if(on&&rnd()<(writing?.5:.12)){const a=(rnd()*6)|0,b=(rnd()*6)|0;if(a!==b)AG.pk.push({a,b,t:0})}
+ for(let k=AG.pk.length-1;k>=0;k--){const p=AG.pk[k];p.t+=.035;if(p.t>=1){AG.pk.splice(k,1);continue}const a=AG.agents[p.a],b=AG.agents[p.b];
+  const x=(a.x+(b.x-a.x)*p.t)*W,y=(a.y+(b.y-a.y)*p.t)*H;cx.globalAlpha=A;cx.drawImage(SPR1,x-7,y-7,14,14);cx.globalAlpha=1}
+ // --- Kern (Claude)
+ const cr=34+Math.sin(now/180)*4+(writing?8:0);cx.globalAlpha=.7*A;cx.drawImage(SPRW,cxr-cr*2,cyr-cr*2,cr*4,cr*4);cx.globalAlpha=1;
+ cx.strokeStyle=`rgba(${G},${.8*A})`;cx.lineWidth=1.5;cx.beginPath();cx.arc(cxr,cyr,cr,now/300,now/300+4.2);cx.stroke();
+ cx.beginPath();cx.arc(cxr,cyr,cr+10,-now/450,-now/450+2.4);cx.stroke();
+ // --- Spuren + Agenten-Punkte
+ AG.agents.forEach(a=>{cx.strokeStyle=`rgba(${a.hue?G2:G},${.4*A})`;cx.lineWidth=2;cx.beginPath();a.trail.forEach(([x,y],k)=>k?cx.lineTo(x*W,y*H):cx.moveTo(x*W,y*H));cx.stroke();
+  const s=26+Math.sin(now/150+a.x*20)*5;cx.globalAlpha=A;cx.drawImage(a.hue?SPR2:SPR1,a.x*W-s/2,a.y*H-s/2,s,s);cx.globalAlpha=1});
+ // --- Fliegende Wörter der echten Antwort
+ cx.globalCompositeOperation="source-over";cx.font="bold 12px Consolas,Menlo,monospace";
+ for(let k=AG.words.length-1;k>=0;k--){const w=AG.words[k];w.x+=w.vx;w.y+=w.vy;w.life-=.009;if(w.life<=0){AG.words.splice(k,1);continue}
+  cx.fillStyle=`rgba(${G},${w.life*A})`;cx.fillText(w.w,w.x*W,w.y*H)}
+ // --- Zielmarkierungen + Beschriftung
+ cx.font="10px Consolas,Menlo,monospace";
+ AG.agents.forEach(a=>{const x=a.x*W,y=a.y*H,b=13,c=5;cx.strokeStyle=`rgba(${G},${.9*A})`;cx.lineWidth=1.2;cx.beginPath();
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>{cx.moveTo(x+sx*b,y+sy*(b-c));cx.lineTo(x+sx*b,y+sy*b);cx.lineTo(x+sx*(b-c),y+sy*b)});cx.stroke();
+  if(!small){cx.fillStyle=`rgba(0,0,0,${.6*A})`;cx.fillRect(x+16,y-14,118,30);cx.fillStyle=`rgba(${G},${A})`;cx.fillText(a.id+" · "+a.role,x+20,y-3);
+   cx.fillStyle=`rgba(${G},${.55*A})`;cx.fillText(a.desc,x+20,y+9);cx.fillStyle=`rgba(${G},${.25*A})`;cx.fillRect(x+16,y+14,118,2);cx.fillStyle=`rgba(${G},${A})`;cx.fillRect(x+16,y+14,118*a.prog,2)}});
+ // --- Status-Panel (unten rechts)
+ const pw=small?W-20:300,ph=small?70:150,px=W-pw-10,py=H-ph-26;
+ cx.fillStyle=`rgba(0,0,0,${.78*A})`;cx.fillRect(px,py,pw,ph);cx.strokeStyle=`rgba(${G},${.8*A})`;cx.lineWidth=1;cx.strokeRect(px+.5,py+.5,pw,ph);
+ cx.fillStyle=`rgba(${G2},${A})`;cx.fillRect(px,py,pw,16);cx.fillStyle=`rgba(0,0,0,${A})`;cx.font="bold 10px Consolas,Menlo,monospace";
+ cx.fillText("◆ CLAUDE // AGENTEN // CLASSIFIED",px+6,py+11);
+ cx.font="11px Consolas,Menlo,monospace";const st=AG.phase==="think"?"DENKT NACH"+".".repeat(1+((now/300)|0)%3):writing?"SCHREIBT ANTWORT":AG.phase==="done"?"FERTIG ✓":AG.phase==="error"?"FEHLER ✗":"";
+ cx.fillStyle=`rgba(${G},${A})`;cx.fillText("STATUS  "+st,px+8,py+31);
+ cx.fillStyle=`rgba(${G},${.7*A})`;cx.fillText("TOKENS  "+AG.tok+"   ZEIT "+(((AG.phase==="done"||AG.phase==="error"?AG.t0:now)-(AG.start||now))/1000).toFixed(1)+"s   AKTIV 6/6",px+8,py+45);
+ if(!small)AG.log.forEach((l,i)=>{const age=now-l.at,n=Math.min(l.t.length,(age/12)|0);cx.fillStyle=`rgba(${G},${(.45+.55*(i===AG.log.length-1))*A})`;cx.fillText(l.t.slice(0,n)+(n<l.t.length?"█":""),px+8,py+64+i*14)});
+ // --- ACCESS GRANTED / DENIED
+ if(AG.flash&&now-AG.flash.at<1600){const f=AG.flash,k=1-(now-f.at)/1600;cx.font=`bold ${Math.min(64,W/14)|0}px Consolas,Menlo,monospace`;cx.textAlign="center";
+  const col=f.ok?G:"255,60,60";cx.fillStyle=`rgba(0,0,0,${.5*k})`;cx.fillRect(0,cyr-50,W,90);cx.fillStyle=`rgba(${col},${k})`;cx.shadowColor=`rgb(${col})`;cx.shadowBlur=24;
+  cx.fillText((rnd()<.06?"ACC#SS GR@NTED":f.t),cxr,cyr+18);cx.shadowBlur=0;cx.textAlign="start"}
+ cx.restore()}
+
 function drawBrain(now,B,Mi,Hi,ON){
  cx.globalCompositeOperation="lighter";
  proj(hub,hp);
@@ -582,7 +661,7 @@ function setFocus(i){focus=i;const f=FILES[i];$("cardT").textContent=f[0];$("car
 const rc=$("rc"),rx=rc.getContext("2d");let RW,RH;
 function rsz(){RW=rc.parentElement.clientWidth;RH=rc.parentElement.clientHeight;rc.width=RW*DPR;rc.height=RH*DPR;rx.setTransform(DPR,0,0,DPR,0,0)}
 const blips=FILES.map((f,i)=>({a:i/FILES.length*Math.PI*2+rnd()*.4,r:.3+rnd()*.65}));
-function drawRadar(now){radarAng+=.017+AU.bass*.12;if(!RW)return;const cxr=RW/2,cyr=RH/2,R=Math.min(RW,RH)/2-4,sw=radarAng;
+function drawRadar(now){radarAng+=.017+AU.bass*.12;if(!RW)return;const cxr=RW/2,cyr=RH/2,R=Math.min(RW,RH)/2-4,sw=radarAng;if(R<6)return;
  rx.fillStyle=BG;rx.globalAlpha=.25;rx.fillRect(0,0,RW,RH);rx.globalAlpha=1;
  rx.strokeStyle=`rgba(${G},.2)`;rx.lineWidth=1;for(let i=1;i<=3;i++){rx.beginPath();rx.arc(cxr,cyr,R*i/3,0,7);rx.stroke()}
  rx.beginPath();rx.moveTo(cxr-R,cyr);rx.lineTo(cxr+R,cyr);rx.moveTo(cxr,cyr-R);rx.lineTo(cxr,cyr+R);rx.stroke();
@@ -603,6 +682,7 @@ if(!store.get("settings")){ // alte Einzel-Einstellungen übernehmen
  const k=store.get("ak");if(k)SET.key=k;const m=store.get("model");if(m)SET.model=m;const s=store.get("scene");if(s)SET.scene=s;
  const t=store.get("theme");if(t&&store.get("v2"))SET.theme=t;if(store.get("panels")==="0")SET.panels=false}
 function saveSet(){store.set("settings",JSON.stringify(SET));updateUI()}
+function normModel(m){const s=String(m||"").toLowerCase();if(MODELS.some(x=>x[0]===s))return s;return/opus|opos|opu/.test(s)?"claude-opus-5-5":/haiku|haik/.test(s)?"claude-haiku-5-5":"claude-sonnet-5-5"}
 const MODELS=[["claude-sonnet-5-5","Sonnet 5.5 – schlau & schnell (empfohlen)"],["claude-opus-5-5","Opus 5.5 – am stärksten, langsamer & teurer"],["claude-haiku-5-5","Haiku 5.5 – am schnellsten & günstigsten"]];
 const PERSONAS={
  standard:["Standard","Du bist Claude, ein hilfreicher KI-Assistent, eingebaut in ein Retro-Hacker-Terminal. Antworte in der Sprache des Nutzers, klar und eher knapp, als reiner Text ohne Markdown (keine Sternchen, keine Rauten, keine Tabellen)."],
@@ -654,18 +734,21 @@ const CMDS={
   Szenen oben im Bild anklicken      → andere Grafik
 
 Befehle:
-  help · settings · clear (Chat leeren) · /clear (Claude vergisst das Gespräch)
+  help · settings · demo (Agenten-Animation ansehen) · clear (Chat leeren) · /clear (Claude vergisst das Gespräch)
   scene world|eye|brain|tunnel|orb|galaxy|terrain|auto
   theme red|amber|green|cyan · audio pc|mic|screen|off · panels · burst · status`,"s"),
  settings:()=>openSettings(),
  theme:a=>{setTheme(a[0]||"red")?out("Farbschema → "+(a[0]||"red"),"o"):out("Gibt es nicht. Wähle: red, amber, green, cyan","e")},
  status:()=>out(`Modell ${SET.model} · Modus ${PERSONAS[SET.persona][0]} · Key ${SET.key?"✓":"fehlt"} · ${STATS.msgs} Nachrichten · ${STATS.inTok+STATS.outTok} Tokens`,"s"),
  key:a=>{SET.key=(a[0]||"").trim();saveSet();out(SET.key?"API-Key gespeichert (nur auf diesem Gerät).":"API-Key entfernt.","o")},
- model:a=>{if(a[0]){SET.model=a[0];saveSet()}out("Modell → "+SET.model,"o")},
+ model:a=>{if(a[0]){SET.model=normModel(a.join(" "));saveSet()}out("Modell → "+(MODELS.find(m=>m[0]===SET.model)||[0,SET.model])[1],"o")},
  burst:()=>{busy=1;camShake=20;for(let i=0;i<6;i++)setTimeout(shock,i*150);setTimeout(()=>busy=0,2500);out("burst ⚡","o")},
  audio:a=>{const k=a[0]||"auto";if(!AUDIO_SRC.some(x=>x[0]===k))return out("Wähle: pc, mic, screen, off","e");SET.audio=k;saveSet();applyAudio(true)},
  scene:a=>{if(!a[0])return out("Szenen: "+SCENE_LIST.join(", ")+", auto","s");setScene(a[0])?out("Szene → "+a[0],"o"):out("Gibt es nicht: "+a[0],"e")},
  panels:()=>{SET.panels=!SET.panels;saveSet();applyLook()},
+ demo:async()=>{out("Demo: so sieht es aus, wenn Claude arbeitet …","s");busy=1;agPhase("think");await new Promise(r=>setTimeout(r,2200));
+  const txt="Das ist nur eine Demo. Wenn Claude wirklich antwortet, fliegen hier die echten Wörter der Antwort aus den Agenten heraus, Token für Token, live gestreamt.";
+  let t="";agPhase("write");for(const w of txt.split(" ")){t+=(t?" ":"")+w;agText(t);await new Promise(r=>setTimeout(r,90))}busy=0;agPhase("done")},
  clear:()=>log.innerHTML="",
  "/clear":()=>{convo.length=0;CC.session=null;out("Neues Gespräch – Claude hat den bisherigen Verlauf vergessen.","o")},
 };
@@ -717,11 +800,12 @@ function callAbo(prompt,onText,opts){opts=opts||{};return new Promise((res,rej)=
 async function ask(q){
  if(!ready()){out(HAS_PC?"Erst verbinden → ⚙ Einstellungen: 'Claude-Abo' wählen (oder API-Key eintragen).":"Dafür brauchst du zuerst einen API-Key → öffne ⚙ Einstellungen.","e");openSettings("api");return}
  convo.push({role:"user",content:q});setBusy(true);const line=out("◆ ▌","a");let n=0;
- const onT=t=>{line.textContent="◆ "+t+"▌";log.scrollTop=log.scrollHeight;if(++n%6===0)spawnPacket()};
+ agPhase("think");
+ const onT=t=>{if(AG.phase!=="write")agPhase("write");agText(t);line.textContent="◆ "+t+"▌";log.scrollTop=log.scrollHeight;if(++n%6===0)spawnPacket()};
  try{const r=useAbo()?await callAbo(q,onT):await callClaude(convo,SET.maxTok,onT);
   line.textContent="◆ "+(r.txt||"(leere Antwort)");convo.push({role:"assistant",content:r.txt});
-  STATS.msgs++;STATS.inTok+=r.inT;STATS.outTok+=r.outT;STATS.hist.push(r.inT+r.outT);camShake=8;if(SCENE==="brain")setFocus(Math.floor(rnd()*FILES.length));
- }catch(e){convo.pop();line.remove();out("✗ "+(e instanceof TypeError?"Keine Verbindung zu api.anthropic.com – Internet prüfen.":e.message),"e")}
+  if(AG.phase!=="write")agText(r.txt||"");agPhase("done");STATS.msgs++;STATS.inTok+=r.inT;STATS.outTok+=r.outT;STATS.hist.push(r.inT+r.outT);camShake=8;if(SCENE==="brain")setFocus(Math.floor(rnd()*FILES.length));
+ }catch(e){agPhase("error");convo.pop();line.remove();out("✗ "+(e instanceof TypeError?"Keine Verbindung zu api.anthropic.com – Internet prüfen.":e.message),"e")}
  setBusy(false);updateStats()}
 
 cmd.addEventListener("keydown",async e=>{
@@ -930,6 +1014,7 @@ SCENES.eye=(now,B,Mi,Hi,ON)=>{
 
 // ================= Start =================
 if(!SET.backend)SET.backend=HAS_PC?"abo":"api";
+SET.model=normModel(SET.model);
 setTheme(SET.theme,true);applyLook();
 setScene(SET.scene||"world",true);
 applyAudio();updateUI();updateStats();

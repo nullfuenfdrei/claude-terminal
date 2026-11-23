@@ -1,7 +1,7 @@
 # Maintainer: nullfuenfdrei
 pkgname=claude-terminal
 pkgver=2.0.0
-pkgrel=3
+pkgrel=4
 pkgdesc="Chat mit Claude im Hacker-Look + Live-Musik-Visualizer"
 arch=('any')
 url="https://github.com/nullfuenfdrei/claude-terminal"

@@ -86,7 +86,8 @@ function openLoginTerminal() {
   const cands = [process.env.TERMINAL, "kitty", "alacritty", "foot", "wezterm", "konsole", "gnome-terminal", "xfce4-terminal", "xterm"].filter(Boolean);
   for (const t of cands) {
     if (spawnSync("sh", ["-c", "command -v " + JSON.stringify(t)]).status !== 0) continue;
-    const args = t === "gnome-terminal" ? ["--", "claude"] : t === "wezterm" ? ["start", "--", "claude"] : ["-e", "claude"];
+    const c = ["claude", "auth", "login", "--claudeai"];
+    const args = t === "gnome-terminal" ? ["--", ...c] : t === "wezterm" ? ["start", "--", ...c] : ["-e", ...c];
     spawn(t, args, { detached: true, stdio: "ignore", env: process.env }).unref();
     return;
   }
