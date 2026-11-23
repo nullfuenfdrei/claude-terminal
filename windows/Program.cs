@@ -70,5 +70,23 @@ class MainForm : Form
         cw.Settings.AreDevToolsEnabled = false;
         cw.SetVirtualHostNameToFolderMapping("claude-terminal.app", webDir, CoreWebView2HostResourceAccessKind.Allow);
         cw.Navigate("https://claude-terminal.app/index.html");
+
+        // PC-Sound abgreifen und ~60x pro Sekunde an die Grafik schicken
+        try
+        {
+            audio.Start();
+            var timer = new System.Windows.Forms.Timer { Interval = 15 };
+            timer.Tick += (_, _) => { var j = audio.TakeJson(); if (j != null) cw.PostWebMessageAsJson(j); };
+            timer.Start();
+        }
+        catch { /* kein Ausgabegerät – Visualizer bleibt aus */ }
+    }
+
+    readonly AudioTap audio = new();
+
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+        audio.Dispose();
+        base.OnFormClosed(e);
     }
 }

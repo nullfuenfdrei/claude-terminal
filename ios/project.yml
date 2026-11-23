@@ -27,6 +27,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: "Claude Terminal"
         INFOPLIST_KEY_UILaunchScreen_Generation: true
         INFOPLIST_KEY_UIStatusBarStyle: UIStatusBarStyleLightContent
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Damit die Grafik zur Musik um dich herum pulsiert."
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

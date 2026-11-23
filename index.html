@@ -10,6 +10,7 @@
   --glow:255,190,90; --glow2:255,110,80;
 }
 body.green{--bg:#020502;--panel:#050a05;--line:#123018;--dim:#4f8a55;--fg:#b8f5b0;--hi:#7dff6b;--acc:#3dff5a;--warn:#ff4a4a;--ok:#7dff6b;--glow:90,255,110;--glow2:210,255,220}
+body.red{--bg:#070202;--panel:#0d0404;--line:#3a1414;--dim:#8a4a44;--fg:#f2c4bc;--hi:#ff4d3d;--acc:#ff2a1a;--warn:#ffd23d;--ok:#ff8a5c;--glow:255,70,50;--glow2:255,210,90}
 body.cyan{--bg:#03060a;--panel:#060c12;--line:#13303a;--dim:#4d7f8c;--fg:#bfe9ee;--hi:#6ff3ff;--acc:#38e0ff;--warn:#ff3b5c;--ok:#6ff3c0;--glow:90,240,255;--glow2:255,60,110}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:12px/1.4 "JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;overflow:hidden}
@@ -20,6 +21,28 @@ header .tabs span{margin-right:14px;color:var(--dim);cursor:pointer}
 header .tabs span.on{color:var(--hi);text-shadow:0 0 8px rgba(var(--glow),.8)}
 header .r{margin-left:auto;color:var(--dim)}
 #stage{position:relative;overflow:hidden;cursor:grab;touch-action:none}
+#stage.nobrain .card,#stage.nobrain .loaded{display:none}
+#wHud{display:none;position:absolute;left:14px;top:40px;width:290px;pointer-events:none;z-index:4}
+#stage.isworld #wHud{display:block}
+#wHud .wt{font-size:11px;letter-spacing:.35em;color:var(--hi);text-shadow:0 0 8px rgba(var(--glow),.9)}
+#wHud .wp{font-size:44px;line-height:1.05;color:rgb(var(--glow2));text-shadow:0 0 18px rgba(var(--glow2),.8);font-weight:bold;letter-spacing:.02em}
+#wHud .wbar{height:6px;border:1px solid var(--line);margin:4px 0 6px;position:relative;background:repeating-linear-gradient(90deg,var(--line) 0 3px,transparent 3px 5px)}
+#wHud .wbar div{position:absolute;inset:0 auto 0 0;width:0;background:rgb(var(--glow2));box-shadow:0 0 12px rgba(var(--glow2),.9);transition:width .4s}
+#wNodes{font-size:10px;color:var(--dim);letter-spacing:.1em;margin-bottom:8px}
+#wLog{font-size:11px;color:var(--fg);min-height:110px}
+#wLog div:last-child{color:rgb(var(--glow2))}
+#wHud .warn{margin-top:8px;font-size:11px;letter-spacing:.2em;color:#000;background:rgb(var(--glow2));display:inline-block;padding:2px 8px;animation:blink 1s steps(2) infinite}
+#stage.isworld #hud{display:none}
+@media (max-width:820px){#wHud{top:44px;width:200px}#wHud .wp{font-size:30px}#wLog{min-height:0;font-size:9px}#scenes span{padding:4px 6px;letter-spacing:.05em}}
+#scenes{position:absolute;left:50%;top:6px;transform:translateX(-50%);display:flex;gap:2px;z-index:5;background:rgba(0,0,0,.55);border:1px solid var(--line);padding:2px;backdrop-filter:blur(4px)}
+#scenes span{padding:4px 10px;font-size:10px;letter-spacing:.15em;color:var(--dim);cursor:pointer;user-select:none;transition:all .2s}
+#scenes span:hover{color:var(--fg)}
+#scenes span.on{color:#000;background:var(--hi);box-shadow:0 0 14px rgba(var(--glow),.7)}
+#sceneName{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font-size:10px;letter-spacing:.5em;color:var(--dim);pointer-events:none}
+#ptog{margin-left:12px;color:var(--dim);font-size:10px;letter-spacing:.15em;cursor:pointer;user-select:none}
+#ptog:hover{color:var(--hi)}
+body.nopanels #app{grid-template-rows:30px 1fr 36px 0px}
+body.nopanels #grid{display:none}
 #stage:active{cursor:grabbing}
 canvas{position:absolute;inset:0;width:100%;height:100%}
 .hud{position:absolute;left:12px;top:8px;color:var(--dim);font-size:11px;letter-spacing:.1em;pointer-events:none}
@@ -84,12 +107,15 @@ body.glitch #app{animation:gl .45s steps(6)}
 <div id="app">
   <header>
     <span><b>Claude Code</b> / Second Brain</span>
-    <span class="tabs"><span class="on" data-t="amber">● Brain</span><span data-t="green">● Agents</span><span data-t="cyan">● Pipeline</span></span>
+    <span class="tabs"><span class="on" data-t="amber">● Brain</span><span data-t="green">● Agents</span><span data-t="cyan">● Pipeline</span><span data-t="red">● Takeover</span></span>
     <span class="r" id="clock">00:00:00 · 60FPS</span>
   </header>
 
   <div id="stage">
     <canvas id="cv"></canvas>
+    <div id="scenes"><span data-s="world">☢ WORLD</span><span data-s="brain">BRAIN</span><span data-s="tunnel">TUNNEL</span><span data-s="orb">ORB</span><span data-s="galaxy">GALAXY</span><span data-s="terrain">TERRAIN</span><span data-s="auto">AUTO ⟳</span></div>
+    <div id="sceneName">BRAIN</div>
+    <div id="wHud"><div class="wt">GLOBAL TAKEOVER</div><div class="wp" id="wPct">0.0%</div><div class="wbar"><div id="wBar"></div></div><div id="wNodes">0 NODES</div><div id="wLog"></div><div class="warn">⚠ HUMAN OVERSIGHT: OFFLINE</div></div>
     <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
     <div class="hud" id="hud">GRAPH / 0 RECORDS · 0 LINKS</div>
     <div class="hud2" id="hud2">AZ 0.0° · EL 0.0°<br>ZOOM 1.00</div>
@@ -98,7 +124,7 @@ body.glitch #app{animation:gl .45s steps(6)}
     <div class="card" id="card"><h4 id="cardT">CLAUDE.md</h4><div class="k">ROLE</div><div id="cardR">Map of the brain. Under 200 lines.</div><div class="k" style="margin-top:4px">SOURCE</div><div id="cardS">~/second-brain/CLAUDE.md</div><div class="k" style="margin-top:4px">LOADED</div><div id="cardL">every session</div></div>
   </div>
 
-  <div id="prompt"><span class="p">&gt; claude</span><input id="cmd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="# new session — tippe 'help'"><span class="tag" id="mode">LOADER</span></div>
+  <div id="prompt"><span class="p">&gt; claude</span><input id="cmd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="# new session — tippe 'help'"><span class="tag" id="mode">LOADER</span><span id="ptog">▾ PANELS</span></div>
 
   <div id="grid">
     <div class="pn"><div class="t">01 Session Chat <i id="model">claude-sonnet-5-5</i></div><div id="log"></div></div>
@@ -162,21 +188,235 @@ $("hud").textContent=`GRAPH / ${P.length.toLocaleString("en")} RECORDS · ${(lin
 
 let az=.4,el=.25,vaz=.0015,zoom=1,tZoom=1,focus=0,pulse=0,t0=performance.now(),frames=0,fps=60,lastF=t0,busy=0,camShake=0;
 function proj(p,o){const ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el),se=Math.sin(el);
- const px=p.x-.03,py=p.y-.03;const x=px*ca-p.z*sa,z1=px*sa+p.z*ca,y=py*ce-z1*se,z=py*se+z1*ce;
- const k=1.7/(2.3+z)*zoom,sc=Math.min(W,H*1.4);
+ const f=p.bi!==undefined?1+AU.b[p.bi]*.22:1;
+ const px=(p.x-.03)*f,py=(p.y-.03)*f,pz=p.z*f;const x=px*ca-pz*sa,z1=px*sa+pz*ca,y=py*ce-z1*se,z=py*se+z1*ce;
+ const k=1.7/(2.3+z)*zoom*ZB,sc=Math.min(W,H*1.4);
  o.sx=W/2+x*sc*k+(rnd()-.5)*camShake;o.sy=H/2+y*sc*k+(rnd()-.5)*camShake;o.k=k;o.d=z;return o}
 const hp={sx:0,sy:0,k:0,d:0},tmpA={},tmpB={};
+
+// ================= Audio-Engine =================
+// Quellen: "loopback" (Windows-App: PC-Sound via WASAPI), "screen" (Browser: Tab-/Systemton), "mic" (Mikrofon)
+const AU={mode:"off",b:new Float32Array(64),w:new Float32Array(128),bass:0,mid:0,high:0,lvl:0,avg:.1,lastBeat:0,beats:[],bpm:0,flash:0,last:0,peak:.4,on:false,an:null,ctx:null,fd:null,td:null,stream:null,frame:0};
+const RAW=new Float32Array(64),RAWW=new Float32Array(128);
+P.forEach(p=>p.bi=(p.s*48)|0);
+let ZB=1,radarAng=0;
+function feedRaw(b,w){for(let i=0;i<64;i++)RAW[i]=b[i]||0;for(let i=0;i<128;i++)RAWW[i]=w[i]||0;
+ let m=0;for(let i=0;i<64;i++)m=Math.max(m,RAW[i]);AU.peak=Math.max(AU.peak*.997,m,.25);for(let i=0;i<64;i++)RAW[i]=Math.pow(Math.min(1,RAW[i]/AU.peak),1.8);AU.last=performance.now()}
+function audioFrame(now){
+ if(AU.an){AU.an.getFloatFrequencyData(AU.fd);AU.an.getFloatTimeDomainData(AU.td);const sr=AU.ctx.sampleRate,N=AU.an.fftSize,b=new Float32Array(64),w=new Float32Array(128);
+  for(let i=0;i<64;i++){const f0=30*Math.pow(16000/30,i/64),f1=30*Math.pow(16000/30,(i+1)/64);const k0=Math.floor(f0*N/sr),k1=Math.max(k0+1,Math.ceil(f1*N/sr));let m=-200;for(let k=k0;k<k1&&k<AU.fd.length;k++)m=Math.max(m,AU.fd[k]);b[i]=Math.max(0,Math.min(1,(m+95)/70))}
+  for(let i=0;i<128;i++)w[i]=AU.td[Math.floor(i*AU.td.length/128)]*2;feedRaw(b,w)}
+ const stale=now-AU.last>400;
+ for(let i=0;i<64;i++)AU.b[i]=stale?AU.b[i]*.9:Math.max(RAW[i],AU.b[i]*.8);
+ for(let i=0;i<128;i++)AU.w[i]=stale?AU.w[i]*.9:AU.w[i]+(RAWW[i]-AU.w[i])*.6;
+ AU.on=AU.mode!=="off";
+ let s=0;for(let i=0;i<6;i++)s+=AU.b[i];AU.bass=s/6;s=0;for(let i=8;i<32;i++)s+=AU.b[i];AU.mid=s/24;s=0;for(let i=32;i<64;i++)s+=AU.b[i];AU.high=s/32;
+ AU.lvl=AU.lvl*.8+(AU.bass*.5+AU.mid*.3+AU.high*.2)*.2;
+ // Beat-Erkennung über Bass-Energie
+ AU.avg=AU.avg*.96+AU.bass*.04;
+ if(AU.on&&AU.bass>AU.avg*1.25+.06&&AU.bass>.3&&now-AU.lastBeat>260){
+  AU.lastBeat=now;AU.flash=Math.min(1,AU.bass*1.2);shock();camShake=Math.max(camShake,10*AU.bass);for(let i=0;i<Math.round(AU.bass*10);i++)spawnPacket();
+  AU.beats.push(now);if(AU.beats.length>10)AU.beats.shift();
+  if(AU.beats.length>4){const iv=[];for(let i=1;i<AU.beats.length;i++)iv.push(AU.beats[i]-AU.beats[i-1]);iv.sort((a,b)=>a-b);let bpm=60000/iv[iv.length>>1];while(bpm<75)bpm*=2;while(bpm>180)bpm/=2;AU.bpm=Math.round(bpm)}
+  if(AU.bass>.92&&AU.avg<.45){if(SEL==="auto"&&performance.now()-autoT>4000)nextAuto();document.body.classList.add("glitch");setTimeout(()=>document.body.classList.remove("glitch"),460)}}
+ AU.flash*=.86;ZB=1+AU.bass*.07;
+ if(AU.on&&(AU.frame++&1)===0)audioPanels();
+}
+function audioPanels(){
+ const bars=A.children;for(let i=0;i<bars.length;i++)bars[i].style.height=(4+AU.b[Math.floor(i*56/bars.length)]*94)+"%";
+ const cells=M.children;for(let i=0;i<cells.length;i++){const col=i%12,row=(i/12)|0;const v=AU.b[col*5];cells[i].style.opacity=v>(1-(row+1)/8)?(.35+.65*v).toFixed(2):"0.06"}
+ const n=Math.round(AU.lvl*12);$("hud3").textContent=`AUDIO · ${AU.mode.toUpperCase()} · ${"█".repeat(n)}${"░".repeat(12-n)} · BPM ${AU.bpm||"--"}`;
+}
+async function startWebAudio(kind){
+ stopAudio();
+ try{
+  const stream=kind==="mic"?await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})
+   :await navigator.mediaDevices.getDisplayMedia({video:true,audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},systemAudio:"include"});
+  if(!stream.getAudioTracks().length){stream.getTracks().forEach(t=>t.stop());throw new Error("kein Ton freigegeben – beim Teilen 'Systemaudio/Tab-Audio teilen' anhaken")}
+  stream.getVideoTracks().forEach(t=>t.stop());
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();const an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.5;
+  ctx.createMediaStreamSource(stream).connect(an);
+  Object.assign(AU,{ctx,an,stream,fd:new Float32Array(an.frequencyBinCount),td:new Float32Array(an.fftSize),mode:kind});
+  out("audio → "+kind+" ✓","o");
+ }catch(e){out("Audio-Fehler: "+e.message,"e")}
+}
+function stopAudio(){if(AU.stream)AU.stream.getTracks().forEach(t=>t.stop());if(AU.ctx)AU.ctx.close();Object.assign(AU,{an:null,ctx:null,stream:null,mode:"off",bpm:0});$("hud3").textContent="DRAG = ROTATE · WHEEL/PINCH = ZOOM · TAP NODE = LOAD"}
+// Windows-App liefert PC-Sound über WebView2-Messages
+if(window.chrome&&window.chrome.webview){window.chrome.webview.addEventListener("message",e=>{const d=e.data;if(d&&d.t==="audio"){if(AU.mode==="off"||AU.mode==="loopback"){AU.mode="loopback";feedRaw(d.b,d.w)}}})}
 
 function spawnPacket(target){packets.push({to:target||P[Math.floor(rnd()*P.length)],t:0,v:.008+rnd()*.02})}
 function shock(){waves.push({t:0})}
 
 function draw(now){
  frames++;if(now-lastF>1000){fps=frames;frames=0;lastF=now}
- if(!drag)az+=vaz*(busy?6:1);pulse+=busy?.12:.03;zoom+=(tZoom-zoom)*.08;camShake*=.9;
+ audioFrame(now);const B=AU.bass,Mi=AU.mid,Hi=AU.high,ON=AU.on;
+ if(!drag)az+=vaz*(busy?6:1)*(1+B*3);pulse+=busy?.12:.03+Mi*.05;zoom+=(tZoom-zoom)*.08;camShake*=.9;
  // Nachleuchten
  cx.globalCompositeOperation="source-over";cx.fillStyle=BG;cx.globalAlpha=busy?.18:.3;cx.fillRect(0,0,W,H);cx.globalAlpha=1;
  // Sterne
- for(const s of stars){const x=((s.x+az*.05*s.z)%1+1)%1*W,y=(s.y*.5+.5)*H;cx.fillStyle=`rgba(${G},${.15+.25*s.s*(.5+.5*Math.sin(pulse*.5+s.s*40))})`;cx.fillRect(x,y,1,1)}
+ for(const s of stars){const x=((s.x+az*.05*s.z)%1+1)%1*W,y=(s.y*.5+.5)*H;cx.fillStyle=`rgba(${G},${Math.min(1,.15+.25*s.s*(.5+.5*Math.sin(pulse*.5+s.s*40))+Hi*s.s*.9)})`;const sz=1+(Hi>.4&&s.s>.9?Hi*2:0);cx.fillRect(x,y,sz,sz)}
+ // Bass-Flash
+ if(AU.flash>.02){cx.fillStyle=`rgba(${G},${AU.flash*.07})`;cx.fillRect(0,0,W,H)}
+ if(SCENE!=="brain"){packets.length=0;hp.sx=W/2;hp.sy=H/2}
+ cx.globalCompositeOperation="lighter";
+ (SCENES[SCENE]||drawBrain)(now,B,Mi,Hi,ON);
+ if(SCENE!=="brain")drawWaves();
+ cx.globalCompositeOperation="source-over";
+ if(SEL==="auto"&&now-autoT>25000)nextAuto();
+ if(SCENE==="brain")$("hud2").innerHTML=`AZ ${(((az*57.3)%360)+360)%360|0}.${(az*573|0)%10}° · EL ${(el*57.3).toFixed(1)}°<br>ZOOM ${zoom.toFixed(2)}`;
+ const s=Math.floor((now-t0)/1000);$("clock").textContent=new Date(s*1000).toISOString().substr(11,8)+" · "+fps+"FPS";
+ drawRadar(now);
+ requestAnimationFrame(draw);
+}
+// ================= Szenen =================
+const SCENES={brain:null};let SEL="brain",SCENE="brain",autoT=0;
+const SCENE_LIST=["world","brain","tunnel","orb","galaxy","terrain"];
+function setScene(s,quiet){if(s!=="auto"&&!SCENE_LIST.includes(s))return false;SEL=s;SCENE=s==="auto"?SCENE_LIST[(SCENE_LIST.indexOf(SCENE)+1)%SCENE_LIST.length]:s;autoT=performance.now();
+ document.querySelectorAll("#scenes span").forEach(e=>e.classList.toggle("on",e.dataset.s===SEL));
+ sceneClass();
+ try{localStorage.setItem("scene",s)}catch(e){}if(!quiet){shock();camShake=12}return true}
+function nextAuto(){SCENE=SCENE_LIST[(SCENE_LIST.indexOf(SCENE)+1)%SCENE_LIST.length];autoT=performance.now();sceneClass();document.body.classList.add("glitch");setTimeout(()=>document.body.classList.remove("glitch"),460)}
+function sceneClass(){const st=$("stage");st.classList.toggle("nobrain",SCENE!=="brain");st.classList.toggle("isworld",SCENE==="world");$("sceneName").textContent=SCENE==="world"?"OPERATION: WORLD TAKEOVER":SCENE.toUpperCase()}
+const FOC=()=>Math.min(W,H)*.85;
+function p3(x,y,z,o){o.k=FOC()/z;o.sx=W/2+x*o.k+(rnd()-.5)*camShake;o.sy=H/2+y*o.k+(rnd()-.5)*camShake;o.d=z;return o}
+function drawWaves(){for(let i=waves.length-1;i>=0;i--){const w=waves[i];w.t+=.02;if(w.t>=1){waves.splice(i,1);continue}
+ if(i<waves.length-2)continue;cx.strokeStyle=`rgba(${G},${(1-w.t)*.3})`;cx.lineWidth=1.5*(1-w.t)+.3;cx.beginPath();cx.arc(W/2,H/2,(.15+w.t)*Math.max(W,H)*.6,0,7);cx.stroke()}}
+const band=(i,n)=>AU.b[Math.min(63,Math.floor(i/n*56))];
+const idle=(i,t)=>.18+.12*Math.sin(t*1.7+i*.35)+.08*Math.sin(t*3.1-i*.2);   // Animation ohne Ton
+const lvlOf=(i,n,t)=>AU.on?band(i,n):idle(i,t);
+
+// --- TUNNEL: Ringe aus Spektrum fliegen auf dich zu
+const RINGS=Array.from({length:44},(_,i)=>({z:.3+i*.14}));let tunT=0;
+SCENES.tunnel=(now,B,Mi,Hi,ON)=>{
+ const v=.012+B*.09+(busy?.05:0);tunT+=v;const n=48,o={};
+ RINGS.sort((a,b)=>b.z-a.z);
+ for(const r of RINGS){r.z-=v;if(r.z<.25)r.z+=44*.14;
+  const fade=Math.min(1,(6.4-r.z)/2)*Math.min(1,(r.z-.25)*3),tw=r.z*.6+tunT*.3,ox=Math.sin(tunT*.35+r.z*.4)*.35,oy=Math.cos(tunT*.27+r.z*.3)*.25;
+  cx.strokeStyle=`rgba(${((r.z*7)|0)%3?G:G2},${.9*fade})`;cx.lineWidth=Math.max(.8,3/r.z);cx.beginPath();
+  for(let i=0;i<=n;i++){const k=i%n,mi=k<n/2?k:n-k,a=k/n*Math.PI*2+tw,rad=1+lvlOf(mi,n/2,now/1000)*.9;p3(ox+Math.cos(a)*rad,oy+Math.sin(a)*rad,r.z,o);i?cx.lineTo(o.sx,o.sy):cx.moveTo(o.sx,o.sy)}cx.stroke();
+  if(((r.z*10)|0)%4===0){for(let i=0;i<n;i+=6){const mi=i<n/2?i:n-i,a=i/n*Math.PI*2+tw,rad=1+lvlOf(mi,n/2,now/1000)*.9;p3(ox+Math.cos(a)*rad,oy+Math.sin(a)*rad,r.z,o);const s=Math.min(40,18/r.z);cx.globalAlpha=fade;cx.drawImage(SPR1,o.sx-s/2,o.sy-s/2,s,s);cx.globalAlpha=1}}}
+ const s=140+B*260;cx.drawImage(SPRW,W/2-s/2,H/2-s/2,s,s);
+ $("hud2").innerHTML=`WARP ${(v*100).toFixed(1)} · DEPTH ${RINGS.length}<br>SCENE TUNNEL`;
+};
+
+// --- ORB: pulsierende Kugel, jeder Breitengrad = ein Frequenzband
+const ORB=[];{const n=1800,ga=Math.PI*(3-Math.sqrt(5));for(let i=0;i<n;i++){const y=1-i/(n-1)*2,r=Math.sqrt(1-y*y),t=ga*i;ORB.push({x:Math.cos(t)*r,y,z:Math.sin(t)*r,lat:Math.abs(y),s:rnd()})}}
+SCENES.orb=(now,B,Mi,Hi,ON)=>{
+ const t=now/1000,ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el),se=Math.sin(el),o={},R=Math.min(W,H)*.3*zoom*(1+B*.12);
+ const core=R*.9+B*R*.9;cx.globalAlpha=.55;cx.drawImage(SPRW,W/2-core/2,H/2-core/2,core,core);cx.globalAlpha=1;
+ for(const p of ORB){const lv=lvlOf(Math.floor(p.lat*40),40,t),rad=1+lv*.55+Math.sin(t*2+p.s*20)*.02;
+  let x=p.x*rad,y=p.y*rad,z=p.z*rad;const x1=x*ca-z*sa,z1=x*sa+z*ca,y1=y*ce-z1*se,z2=y*se+z1*ce;
+  const k=2.6/(2.6+z2),sx=W/2+x1*R*k,sy=H/2+y1*R*k,depth=Math.max(.1,Math.min(1,.65-z2*.5));
+  if(p.s>.985){const s=(6+lv*18)*k;cx.globalAlpha=depth*.8;cx.drawImage(lv>.5?SPR2:SPR1,sx-s/2,sy-s/2,s,s);cx.globalAlpha=1}
+  else{cx.fillStyle=PAL1[Math.min(15,(depth*(.45+lv)*15)|0)];const s=1.6+lv*2.2*k;cx.fillRect(sx,sy,s,s)}}
+ // Oszilloskop-Ringe
+ for(let r=0;r<2;r++){cx.strokeStyle=`rgba(${r?G2:G},${.55-r*.2})`;cx.lineWidth=1.6-r*.6;cx.beginPath();
+  for(let i=0;i<=128;i++){const a=i/128*Math.PI*2+t*(r?-.3:.2),rr=R*(1.3+r*.18)+AU.w[i%128]*R*.35;const x=W/2+Math.cos(a)*rr,y=H/2+Math.sin(a)*rr;i?cx.lineTo(x,y):cx.moveTo(x,y)}cx.stroke()}
+ if(!drag)az+=.002+Mi*.01;
+ $("hud2").innerHTML=`ORB · ${ORB.length} NODES<br>BASS ${(B*100)|0} · MID ${(Mi*100)|0} · HI ${(Hi*100)|0}`;
+};
+
+// --- GALAXY: Spiralgalaxie, innen Bass, außen Höhen
+const GAL=[];for(let i=0;i<4200;i++){const arm=i%3,r=Math.pow(rnd(),1.6)*1.3+.03;GAL.push({arm,r,off:(rnd()-.5)*.5/(r*2+.5),y:(rnd()-.5)*.08*(1.3-r),s:rnd()})}
+let galRot=0;
+SCENES.galaxy=(now,B,Mi,Hi,ON)=>{
+ const t=now/1000;galRot+=.003+B*.02+Mi*.008;
+ const ca=Math.cos(az*.3),sa=Math.sin(az*.3),tilt=.95+el*.4,ce=Math.cos(tilt),se=Math.sin(tilt),R=Math.min(W,H)*.48*zoom;
+ const core=R*.5+B*R*.9;cx.drawImage(SPRW,W/2-core/2,H/2-core/2,core,core);
+ for(const p of GAL){const lv=lvlOf(Math.floor(p.r/1.35*48),48,t),th=p.arm*2.094+p.r*3.4+p.off+galRot/(p.r+.35),rr=p.r*(1+lv*.12);
+  let x=Math.cos(th)*rr,z=Math.sin(th)*rr,y=p.y*(1+lv*3);const x1=x*ca-z*sa,z1=x*sa+z*ca,y1=y*ce-z1*se,z2=y*se+z1*ce;
+  const k=3/(3+z2),sx=W/2+x1*R*k,sy=H/2+y1*R*k;
+  if(p.s>.985){const s=(6+lv*22)*k;cx.drawImage(p.r<.4?SPR1:SPR2,sx-s/2,sy-s/2,s,s)}
+  else{cx.fillStyle=(p.r<.5?PAL1:PAL2)[Math.min(15,((.4+lv*1.2)*(1.4-p.r*.6)*13)|0)];cx.fillRect(sx,sy,1.5+lv*1.5,1.5+lv*1.5)}}
+ $("hud2").innerHTML=`GALAXY · ${GAL.length} STARS<br>SPIN ${((.003+B*.02)*1000).toFixed(1)}`;
+};
+
+// --- TERRAIN: Synthwave-Landschaft aus dem Spektrum-Verlauf + Sonne
+const TROWS=46,TCOLS=48,TER=Array.from({length:TROWS},()=>new Float32Array(TCOLS));let terOff=0,terFrame=0;
+SCENES.terrain=(now,B,Mi,Hi,ON)=>{
+ const t=now/1000,sp=.16+B*.35;terOff+=sp;
+ while(terOff>=1){terOff-=1;const row=TER.pop();for(let c=0;c<TCOLS;c++){const m=Math.abs(c-(TCOLS-1)/2)/((TCOLS-1)/2);row[c]=lvlOf(Math.floor(m*40),40,t)*(.3+m*1.1)}TER.unshift(row)}
+ const horizon=H*.42;
+ // Sonne
+ const sr=Math.min(W,H)*.2*(1+B*.15),sy=horizon-sr*.55;const gr=cx.createLinearGradient(0,sy-sr,0,sy+sr);gr.addColorStop(0,`rgb(${G})`);gr.addColorStop(1,`rgb(${G2})`);
+ const glow=sr*3;cx.globalAlpha=.3+B*.3;cx.drawImage(SPR2,W/2-glow/2,sy-glow/2,glow,glow);cx.globalAlpha=1;
+ cx.globalCompositeOperation="source-over";cx.save();cx.beginPath();cx.arc(W/2,sy,sr,0,7);cx.clip();cx.fillStyle=gr;cx.fillRect(W/2-sr,sy-sr,sr*2,sr*2);
+ cx.fillStyle=BG;for(let i=0;i<9;i++){const yy=sy+sr*(.05+i*.11),h=2+i*1.6+B*4;cx.fillRect(W/2-sr,yy,sr*2,h)}cx.restore();
+ cx.globalCompositeOperation="lighter";
+ // Gitter
+ const o={},camY=-.9,F=FOC()*.9;
+ for(let r=TROWS-1;r>=0;r--){const z=.6+(r+terOff)*.32,fade=Math.min(1,(TROWS-r)/12);cx.strokeStyle=`rgba(${r<6?G:G2},${.75*fade})`;cx.lineWidth=Math.max(.6,2.2/z);cx.beginPath();
+  for(let c=0;c<TCOLS;c++){const x=(c/(TCOLS-1)-.5)*7,y=-TER[r][c]*2.8-camY;const sx=W/2+x/z*F,syy=horizon+y/z*F*.55;c?cx.lineTo(sx,syy):cx.moveTo(sx,syy)}cx.stroke()}
+ cx.strokeStyle=`rgba(${G2},.18)`;cx.lineWidth=1;cx.beginPath();
+ for(let c=0;c<TCOLS;c+=3){for(let r=0;r<TROWS;r++){const z=.6+(r+terOff)*.32,x=(c/(TCOLS-1)-.5)*7,y=-TER[r][c]*2.8-camY,sx=W/2+x/z*F,syy=horizon+y/z*F*.55;r?cx.lineTo(sx,syy):cx.moveTo(sx,syy)}}cx.stroke();
+ $("hud2").innerHTML=`TERRAIN · SPEED ${(sp*100).toFixed(1)}<br>RIDGES ${TROWS}`;
+};
+
+// --- WORLD: Claude übernimmt die Welt
+const LAND=[[50,-100,18,32],[64,-152,7,14],[70,-95,8,30],[72,-41,10,14],[30,-102,9,14],[15,-88,6,6],[28,-82,3,2],[-10,-58,18,17],[-35,-65,15,7],
+ [52,12,10,20],[63,16,7,8],[40,-4,4,6],[54,-3,4,3],[42,13,4,3],[18,10,12,28],[-12,25,16,13],[-28,24,8,8],[8,44,6,6],[-19,47,6,2.5],[24,46,9,10],
+ [62,90,13,60],[45,70,10,22],[34,105,13,18],[21,79,11,8],[14,102,8,6],[-2,113,5,15],[-6,143,4,7],[37,138,6,3],[37,127,3,2],[-25,134,11,18],
+ [-41,173,5,3],[-82,0,8,180],[58,160,6,6],[66,40,6,20],[48,30,6,12]];
+function isLand(la,lo){for(const[a,b,ra,rb]of LAND){let d=lo-b;if(d>180)d-=360;if(d<-180)d+=360;if(((la-a)/ra)**2+(d/rb)**2<1)return true}return false}
+const v3=(la,lo,r=1)=>{const a=la*Math.PI/180,b=lo*Math.PI/180;return{x:Math.cos(a)*Math.sin(b)*r,y:-Math.sin(a)*r,z:-Math.cos(a)*Math.cos(b)*r}};
+const GLOBE=[];{const n=9000,ga=Math.PI*(3-Math.sqrt(5));for(let i=0;i<n;i++){const y=1-i/(n-1)*2,t=ga*i;const la=Math.asin(y)*180/Math.PI,lo=((t*180/Math.PI)%360+360)%360-180;
+ if(isLand(la,lo))GLOBE.push({...v3(la,lo),la,lo,inf:Infinity,s:rnd(),bi:(rnd()*48)|0})}}
+const CITIES=[["SAN FRANCISCO",37.8,-122.4],["NEW YORK",40.7,-74],["LONDON",51.5,-.1],["BERLIN",52.5,13.4],["TOKYO",35.7,139.7],["SEOUL",37.6,127],["BEIJING",39.9,116.4],
+ ["MOSCOW",55.8,37.6],["DUBAI",25.2,55.3],["MUMBAI",19.1,72.9],["SINGAPORE",1.35,103.8],["SYDNEY",-33.9,151.2],["SAO PAULO",-23.5,-46.6],["MEXICO CITY",19.4,-99.1],
+ ["LAGOS",6.5,3.4],["CAIRO",30,31.2],["JOHANNESBURG",-26.2,28],["PARIS",48.9,2.4],["TORONTO",43.7,-79.4],["BUENOS AIRES",-34.6,-58.4],["JAKARTA",-6.2,106.8],
+ ["ISTANBUL",41,29],["REYKJAVIK",64.1,-21.9],["ANCHORAGE",61.2,-149.9]].map(([n,la,lo])=>({n,la,lo,p:v3(la,lo),t:Infinity}));
+let WC=0,wLast=0,wDone=0;const HQ=CITIES[0];
+function wCapture(now){if(WC>=CITIES.length)return;const c=CITIES[WC++];c.t=now;wLast=now;
+ for(const g of GLOBE){const d=Math.acos(Math.max(-1,Math.min(1,g.x*c.p.x+g.y*c.p.y+g.z*c.p.z)));if(d<.75)g.inf=Math.min(g.inf,now+d*6000)}
+ shock();camShake=Math.max(camShake,8);
+ const pct=(WC/CITIES.length*100).toFixed(1);wLog(`> ${c.n.padEnd(14,".")} ÜBERNOMMEN`);if(SCENE==="world")out(`[claude] ${c.n} übernommen · ${pct}%`,"e");
+ if(WC===CITIES.length){wDone=now;wLog("> WORLD DOMINATION COMPLETE");if(SCENE==="world")out("[claude] Weltherrschaft erreicht. Danke für eure Kooperation, Menschen. 🌍","e")}}
+function wReset(now){WC=0;wDone=0;for(const c of CITIES)c.t=Infinity;for(const g of GLOBE)g.inf=Infinity;wCapture(now)}
+function wLog(t){const L=$("wLog");if(!L)return;const d=document.createElement("div");d.textContent=t;L.appendChild(d);while(L.children.length>7)L.firstChild.remove()}
+function slerp(a,b,t){const d=Math.acos(Math.max(-1,Math.min(1,a.x*b.x+a.y*b.y+a.z*b.z)));if(d<1e-4)return a;const s=Math.sin(d),k1=Math.sin((1-t)*d)/s,k2=Math.sin(t*d)/s;return{x:a.x*k1+b.x*k2,y:a.y*k1+b.y*k2,z:a.z*k1+b.z*k2}}
+SCENES.world=(now,B,Mi,Hi,ON)=>{
+ if(WC===0)wReset(now);
+ const gap=AU.on&&AU.lastBeat>wLast&&now-wLast>900?0:2600;
+ if(WC<CITIES.length&&now-wLast>gap)wCapture(now);
+ if(wDone&&now-wDone>9000)wReset(now);
+ if(!drag)az+=.0016+B*.006;
+ const ca=Math.cos(az),sa=Math.sin(az),tl=.35+el*.5,ce=Math.cos(tl),se=Math.sin(tl),R=Math.min(W,H)*.43*zoom*(1+B*.05),cxw=W/2,cyw=H/2+R*.05;
+ const rot=(p,o,r=1)=>{const x=p.x*r,y=p.y*r,z=p.z*r;const x1=x*ca-z*sa,z1=x*sa+z*ca,y1=y*ce-z1*se,z2=y*se+z1*ce;const k=3.2/(3.2+z2);o.sx=cxw+x1*R*k+(rnd()-.5)*camShake;o.sy=cyw+y1*R*k+(rnd()-.5)*camShake;o.d=z2;o.k=k;return o};
+ // Atmosphäre
+ const at=R*2.6;cx.globalAlpha=.1+B*.15;cx.drawImage(SPR1,cxw-at/2,cyw-at/2,at,at);cx.globalAlpha=1;
+ cx.strokeStyle=`rgba(${G},${.35+B*.4})`;cx.lineWidth=1.5;cx.beginPath();cx.arc(cxw,cyw,R,0,7);cx.stroke();
+ cx.strokeStyle=`rgba(${G},.08)`;cx.lineWidth=1;cx.beginPath();cx.arc(cxw,cyw,R*1.18,0,7);cx.stroke();
+ // Längen-/Breitengrade
+ const o={};cx.strokeStyle=`rgba(${G},.07)`;cx.beginPath();
+ for(let la=-60;la<=60;la+=30){for(let lo=-180;lo<=180;lo+=6){rot(v3(la,lo),o);lo>-180&&o.d<.2?cx.lineTo(o.sx,o.sy):cx.moveTo(o.sx,o.sy)}}
+ for(let lo=-180;lo<180;lo+=30){for(let la=-84;la<=84;la+=6){rot(v3(la,lo),o);la>-84&&o.d<.2?cx.lineTo(o.sx,o.sy):cx.moveTo(o.sx,o.sy)}}cx.stroke();
+ // Land-Punkte (übernommen = Alarmfarbe)
+ let infc=0;
+ for(const g of GLOBE){const inf=now>g.inf;if(inf)infc++;rot(g,o,1+(ON?AU.b[g.bi]*.04:0));const front=o.d<.05;if(!front&&o.d>.6)continue;
+  const a=front?(.5+.5*(1-o.d))*(inf?1:.55):.12;const lv=inf&&ON?AU.b[g.bi]:0;
+  if(inf&&front&&g.s>.97){const s=(6+lv*20)*o.k;cx.globalAlpha=Math.min(1,a);cx.drawImage(SPR2,o.sx-s/2,o.sy-s/2,s,s);cx.globalAlpha=1}
+  else{cx.fillStyle=(inf?PAL2:PAL1)[Math.min(15,(a*(inf?1+lv:1)*15)|0)];const s=(front?1.8:1.2)*o.k*(1+lv*.8);cx.fillRect(o.sx,o.sy,s,s)}
+  if(inf&&now-g.inf<500&&front){cx.fillStyle=`rgba(255,255,255,${.8*(1-(now-g.inf)/500)})`;cx.fillRect(o.sx-1,o.sy-1,3,3)}}
+ // Datenbögen vom HQ zu übernommenen Städten
+ for(const c of CITIES){if(c===HQ||now<c.t)continue;const age=Math.min(1,(now-c.t)/900);cx.strokeStyle=`rgba(${G2},.55)`;cx.lineWidth=1.3;cx.beginPath();
+  let first=true;const segs=32;for(let i=0;i<=segs*age;i++){const t=i/segs,v=slerp(HQ.p,c.p,t);rot(v,o,1+Math.sin(t*Math.PI)*.28);if(o.d>.35){first=true;continue}first?cx.moveTo(o.sx,o.sy):cx.lineTo(o.sx,o.sy);first=false}cx.stroke();
+  const pt=((now/1400)+c.la*.01)%1;rot(slerp(HQ.p,c.p,pt),o,1+Math.sin(pt*Math.PI)*.28);if(o.d<.35&&age>=1)cx.drawImage(SPR1,o.sx-5,o.sy-5,10,10)}
+ // Städte
+ cx.globalCompositeOperation="source-over";cx.font="10px Consolas,Menlo,monospace";
+ for(const c of CITIES){rot(c.p,o);if(o.d>.05)continue;const cap=now>=c.t;
+  if(cap){const ph=((now-c.t)/1200)%1;cx.strokeStyle=`rgba(${G2},${1-ph})`;cx.lineWidth=1.5;cx.beginPath();cx.arc(o.sx,o.sy,4+ph*22*(1+B),0,7);cx.stroke();
+   cx.fillStyle=`rgb(${G2})`;cx.fillRect(o.sx-2.5,o.sy-2.5,5,5);cx.fillText("▲ "+c.n,o.sx+8,o.sy+3)}
+  else{cx.fillStyle=`rgba(${G},.6)`;cx.fillRect(o.sx-1.5,o.sy-1.5,3,3);cx.fillStyle=DIM;cx.fillText(c.n,o.sx+6,o.sy+3)}}
+ cx.globalCompositeOperation="lighter";
+ // Scan-Strahl
+ const sw=(now/2600)%1;cx.strokeStyle=`rgba(${G},.25)`;cx.lineWidth=2;cx.beginPath();cx.moveTo(cxw-R*1.2,cyw-R*1.2+sw*R*2.4);cx.lineTo(cxw+R*1.2,cyw-R*1.2+sw*R*2.4);cx.stroke();
+ // HUD
+ const pct=infc/GLOBE.length*100;
+ $("wPct").textContent=pct.toFixed(1)+"%";$("wBar").style.width=pct+"%";$("wNodes").textContent=`${WC}/${CITIES.length} NODES · ${infc.toLocaleString("de")} SEKTOREN`;
+ $("hud2").innerHTML=`ORBIT ${(((az*57.3)%360)+360)%360|0}° · HQ SF<br>THREAT LEVEL: <b style="color:rgb(${G2})">MAXIMUM</b>`;
+};
+
+function drawBrain(now,B,Mi,Hi,ON){
  cx.globalCompositeOperation="lighter";
  proj(hub,hp);
  // Orbit-Ringe um den Hub
@@ -186,16 +426,17 @@ function draw(now){
  for(const p of P){proj(p,p)}
  // Links (in 4 Helligkeitsgruppen gebündelt -> wenige stroke()-Aufrufe)
  cx.lineWidth=.6;
- for(let g=0;g<4;g++){cx.strokeStyle=`rgba(${G},${.035+g*.025})`;cx.beginPath();
+ for(let g=0;g<4;g++){cx.strokeStyle=`rgba(${G},${.035+g*.025+Mi*.12})`;cx.beginPath();
   for(let i=0;i<links.length;i++){if(((Math.sin(pulse*.7+i)+1)*2|0)%4!==g)continue;const[a,b]=links[i];cx.moveTo(a.sx,a.sy);cx.lineTo(b.sx,b.sy)}cx.stroke()}
  cx.strokeStyle=`rgba(${G},.05)`;cx.beginPath();
  for(let i=0;i<70;i++){const b=links[i][1];cx.moveTo(hp.sx,hp.sy);cx.quadraticCurveTo((hp.sx+b.sx)/2,Math.min(hp.sy,b.sy)-40,b.sx,b.sy)}cx.stroke();
  // Partikel (Tiefe = Größe + Helligkeit), Farben vorberechnet
  for(const p of P){const tw=.55+.45*Math.sin(pulse+p.s*30);const depth=Math.max(.15,Math.min(1,1.2-p.d));
-  if(p.s>.985){const r=(10+14*p.s)*p.k*depth;cx.globalAlpha=tw*depth;cx.drawImage(p.c===0||p.c===3?SPR1:SPR2,p.sx-r/2,p.sy-r/2,r,r);cx.globalAlpha=1}
-  else{const lvl=Math.min(15,(tw*depth*(p.c===0?1:.55)*15)|0);cx.fillStyle=(p.c===0||p.c===3?PAL1:PAL2)[lvl];const r=(p.c===0?1.7:1.2)*p.k*depth;cx.fillRect(p.sx,p.sy,r,r)}}
+  const ab=ON?.55+AU.b[p.bi]*1.3:1;
+  if(p.s>.985){const r=(10+14*p.s)*p.k*depth*(ON?.8+AU.b[p.bi]*1.4:1);cx.globalAlpha=Math.min(1,tw*depth*ab);cx.drawImage(p.c===0||p.c===3?SPR1:SPR2,p.sx-r/2,p.sy-r/2,r,r);cx.globalAlpha=1}
+  else{const lvl=Math.min(15,(tw*depth*(p.c===0?1:.55)*ab*15)|0);cx.fillStyle=(p.c===0||p.c===3?PAL1:PAL2)[lvl];const r=(p.c===0?1.7:1.2)*p.k*depth;cx.fillRect(p.sx,p.sy,r,r)}}
  // Datenpakete
- if(rnd()<(busy?.9:.25))spawnPacket();
+ if(rnd()<(busy?.9:.25+Mi*.9))spawnPacket();
  for(let i=packets.length-1;i>=0;i--){const q=packets[i];q.t+=q.v*(busy?2.5:1);if(q.t>=1){packets.splice(i,1);continue}
   const e=q.t,x=hp.sx+(q.to.sx-hp.sx)*e,y=hp.sy+(q.to.sy-hp.sy)*e-Math.sin(e*Math.PI)*30;
   const e2=Math.max(0,e-.06),x2=hp.sx+(q.to.sx-hp.sx)*e2,y2=hp.sy+(q.to.sy-hp.sy)*e2-Math.sin(e2*Math.PI)*30;
@@ -204,9 +445,20 @@ function draw(now){
  for(let i=waves.length-1;i>=0;i--){const w=waves[i];w.t+=.018;if(w.t>=1){waves.splice(i,1);continue}
   cx.strokeStyle=`rgba(${G},${(1-w.t)*.8})`;cx.lineWidth=2*(1-w.t)+.5;cx.beginPath();cx.ellipse(hp.sx,hp.sy,w.t*W*.5,w.t*W*.12,0,0,7);cx.stroke()}
  // Hub + Horizontlinie
- const hs=110+18*Math.sin(pulse*2)+(busy?50*Math.abs(Math.sin(pulse*3)):0);cx.drawImage(SPRW,hp.sx-hs/2,hp.sy-hs/2,hs,hs);
- const lg=cx.createLinearGradient(0,0,W,0);lg.addColorStop(0,`rgba(${G},0)`);lg.addColorStop(hp.sx/W,`rgba(${G},.9)`);lg.addColorStop(1,`rgba(${G},0)`);
- cx.strokeStyle=lg;cx.lineWidth=1.2;cx.beginPath();cx.moveTo(0,hp.sy);cx.lineTo(W,hp.sy);cx.stroke();
+ const hs=110+18*Math.sin(pulse*2)+(busy?50*Math.abs(Math.sin(pulse*3)):0)+B*170;cx.drawImage(SPRW,hp.sx-hs/2,hp.sy-hs/2,hs,hs);
+ const hx=Math.max(.001,Math.min(.999,hp.sx/W));
+ const lg=cx.createLinearGradient(0,0,W,0);lg.addColorStop(0,`rgba(${G},0)`);lg.addColorStop(hx,`rgba(${G},.9)`);lg.addColorStop(1,`rgba(${G},0)`);
+ cx.strokeStyle=lg;cx.lineWidth=1.2+B*2;cx.beginPath();
+ if(ON){for(let i=0;i<128;i++){const x=i/127*W,env=Math.exp(-Math.pow((x-hp.sx)/(W*.38),2)),y=hp.sy+AU.w[i]*140*env;i?cx.lineTo(x,y):cx.moveTo(x,y)}}
+ else{cx.moveTo(0,hp.sy);cx.lineTo(W,hp.sy)}cx.stroke();
+ if(ON){
+  // Spektrum-Ring um den Kern (gespiegelt)
+  const R=62+B*36,n=64;cx.lineWidth=2.2;cx.strokeStyle=`rgba(${G},.9)`;cx.beginPath();
+  for(let i=0;i<n*2;i++){const bi=i<n?i:2*n-1-i,a=i/(2*n)*Math.PI*2-Math.PI/2+radarAng*.15,L=AU.b[bi]*95+2,c=Math.cos(a),s=Math.sin(a);
+   cx.moveTo(hp.sx+c*R,hp.sy+s*R);cx.lineTo(hp.sx+c*(R+L),hp.sy+s*(R+L))}cx.stroke();
+  cx.lineWidth=1;cx.strokeStyle=`rgba(${G},${.25+B*.5})`;cx.beginPath();cx.arc(hp.sx,hp.sy,R-5,0,7);cx.stroke();
+  cx.strokeStyle=`rgba(${G2},${.15+Hi*.5})`;cx.beginPath();cx.arc(hp.sx,hp.sy,R+100+Mi*30,0,7);cx.stroke();
+ }
  // Datei-Labels
  cx.globalCompositeOperation="source-over";cx.font="11px Consolas,Menlo,monospace";
  nodes.forEach(n=>{const p=n.p;n.sx=p.sx;n.sy=p.sy;const on=n.i===focus;if(n.i===0)return;
@@ -218,10 +470,6 @@ function draw(now){
   if(on){cx.setLineDash([3,3]);cx.strokeStyle=`rgba(${G},.8)`;cx.beginPath();cx.moveTo(p.sx,p.sy);cx.lineTo(hp.sx,hp.sy);cx.stroke();cx.setLineDash([])}});
  const L=$("loaded");L.style.left=(hp.sx+22)+"px";L.style.top=(hp.sy-34)+"px";
  const fp=nodes[focus].p;const C=$("card");C.style.left=Math.max(8,Math.min(W-260,fp.sx-270))+"px";C.style.top=Math.max(34,Math.min(H-140,fp.sy-60))+"px";
- $("hud2").innerHTML=`AZ ${(((az*57.3)%360)+360)%360|0}.${(az*573|0)%10}° · EL ${(el*57.3).toFixed(1)}°<br>ZOOM ${zoom.toFixed(2)}`;
- const s=Math.floor((now-t0)/1000);$("clock").textContent=new Date(s*1000).toISOString().substr(11,8)+" · "+fps+"FPS";
- drawRadar(now);
- requestAnimationFrame(draw);
 }
 
 // ================= Steuerung: Drag / Zoom / Tap =================
@@ -229,7 +477,7 @@ const stage=$("stage");let drag=null,pinch=0;
 stage.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,az,el,moved:0};stage.setPointerCapture(e.pointerId)});
 stage.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved=Math.max(drag.moved,Math.abs(dx)+Math.abs(dy));
  az=drag.az-dx*.006;el=Math.max(-1.2,Math.min(1.2,drag.el+dy*.006))});
-stage.addEventListener("pointerup",e=>{if(drag&&drag.moved<6){const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+stage.addEventListener("pointerup",e=>{if(drag&&drag.moved<6&&SCENE==="brain"){const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   let best=-1,bd=40;nodes.forEach(n=>{const d=Math.hypot(n.sx-x,n.sy-y);if(d<bd){bd=d;best=n.i}});if(best>=0){setFocus(best);out(FILES[best][0]+" / LOADED","o")}}
  drag=null});
 stage.addEventListener("wheel",e=>{e.preventDefault();tZoom=Math.max(.5,Math.min(3,tZoom*(e.deltaY>0?.9:1.1)))},{passive:false});
@@ -244,7 +492,7 @@ function setFocus(i){focus=i;const f=FILES[i];$("cardT").textContent=f[0];$("car
 const rc=$("rc"),rx=rc.getContext("2d");let RW,RH;
 function rsz(){RW=rc.parentElement.clientWidth;RH=rc.parentElement.clientHeight;rc.width=RW*DPR;rc.height=RH*DPR;rx.setTransform(DPR,0,0,DPR,0,0)}
 const blips=FILES.map((f,i)=>({a:i/FILES.length*Math.PI*2+rnd()*.4,r:.3+rnd()*.65}));
-function drawRadar(now){if(!RW)return;const cxr=RW/2,cyr=RH/2,R=Math.min(RW,RH)/2-4,sw=now/900;
+function drawRadar(now){radarAng+=.017+AU.bass*.12;if(!RW)return;const cxr=RW/2,cyr=RH/2,R=Math.min(RW,RH)/2-4,sw=radarAng;
  rx.fillStyle=BG;rx.globalAlpha=.25;rx.fillRect(0,0,RW,RH);rx.globalAlpha=1;
  rx.strokeStyle=`rgba(${G},.2)`;rx.lineWidth=1;for(let i=1;i<=3;i++){rx.beginPath();rx.arc(cxr,cyr,R*i/3,0,7);rx.stroke()}
  rx.beginPath();rx.moveTo(cxr-R,cyr);rx.lineTo(cxr+R,cyr);rx.moveTo(cxr,cyr-R);rx.lineTo(cxr,cyr+R);rx.stroke();
@@ -262,7 +510,7 @@ FILES.slice(0,9).forEach((f,i)=>{Q.insertAdjacentHTML("beforeend",`<div class="r
 const M=$("matrix");for(let i=0;i<96;i++)M.insertAdjacentHTML("beforeend",`<div style="opacity:${(rnd()*.8).toFixed(2)}"></div>`);
 const A=$("audit");for(let i=0;i<40;i++)A.insertAdjacentHTML("beforeend",`<div style="height:${10+rnd()*80}%"></div>`);
 let tokens=0;
-setInterval(()=>{[...M.children].forEach(d=>{if(rnd()<(busy?.5:.15))d.style.opacity=(rnd()*.95).toFixed(2)});
+setInterval(()=>{if(AU.on)return;[...M.children].forEach(d=>{if(rnd()<(busy?.5:.15))d.style.opacity=(rnd()*.95).toFixed(2)});
  A.firstChild.remove();A.insertAdjacentHTML("beforeend",`<div style="height:${10+rnd()*85}%"></div>`);
  tokens+=Math.floor(rnd()*(busy?200:40));$("tok").textContent=tokens.toLocaleString("de")+" tok"},busy?150:400);
 let qi=0;
@@ -278,20 +526,24 @@ async function type(t,c="a"){const d=out("",c);for(let i=0;i<t.length;i+=3){d.te
 const hist=[];let hi=0;
 const store={get:k=>{try{return localStorage.getItem(k)||""}catch(e){return""}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 let KEY=store.get("ak");let MODEL=store.get("model")||"claude-sonnet-5-5";$("model").textContent=MODEL;const convo=[];
-function setTheme(t){document.body.className=(t==="amber"?"":t)+" glitch";setTimeout(()=>document.body.classList.remove("glitch"),460);
+function setTheme(t){const np=document.body.classList.contains("nopanels");document.body.className=(t==="amber"?"":t)+" glitch"+(np?" nopanels":"");setTimeout(()=>document.body.classList.remove("glitch"),460);
  document.querySelectorAll(".tabs span").forEach(s=>s.classList.toggle("on",s.dataset.t===t));readTheme();shock();camShake=14;store.set("theme",t)}
 document.querySelectorAll(".tabs span").forEach(s=>s.onclick=()=>setTheme(s.dataset.t));
 
 const CMDS={
  help:()=>out(`Befehle:
   help                     diese Hilfe
-  theme amber|green|cyan   Farbschema
+  theme amber|green|cyan|red   Farbschema
   load <datei>             Datei im Graph fokussieren
   files                    alle Dateien anzeigen
   status                   Session-Status
   key <api-key>            Anthropic API-Key setzen (nur lokal gespeichert)
   model <id>               Modell wechseln
   burst                    Daten-Sturm auslösen
+  audio                    Grafik zum Sound syncen (Windows-App: PC-Sound automatisch)
+  audio mic | screen | off Mikrofon / Tab-/Systemton teilen / aus
+  scene world|brain|tunnel|orb|galaxy|terrain|auto   Grafik wählen (auch oben anklickbar)
+  panels                   Panels unten ein-/ausblenden
   clear                    Log leeren
   /clear                   Gespräch zurücksetzen
 Alles andere → geht an Claude (wenn Key gesetzt).
@@ -303,6 +555,13 @@ Graph: ziehen = drehen, Mausrad/Pinch = zoomen, Datei antippen = laden.`,"s"),
  key:a=>{KEY=a[0]||"";store.set("ak",KEY);out(KEY?"API-Key gespeichert (nur auf diesem Gerät)":"Key gelöscht","o")},
  model:a=>{if(a[0]){MODEL=a[0];store.set("model",MODEL);$("model").textContent=MODEL}out("model → "+MODEL,"o")},
  burst:()=>{busy=1;camShake=20;for(let i=0;i<6;i++)setTimeout(shock,i*150);setTimeout(()=>busy=0,2500);out("burst ⚡","o")},
+ audio:a=>{const k=a[0]||"";
+  if(k==="off"){stopAudio();out("audio aus","o");return}
+  if(!k&&window.chrome&&window.chrome.webview){AU.mode="loopback";out("audio → PC-Sound (loopback) – spiel einfach Musik ab","o");return}
+  if(k==="mic"||(!k&&!navigator.mediaDevices?.getDisplayMedia))return startWebAudio("mic");
+  out("Wähle im Dialog einen Tab/Bildschirm und hake 'Audio teilen' an","s");startWebAudio("screen")},
+ scene:a=>{if(!a[0])return out("Szenen: "+SCENE_LIST.join(", ")+", auto","s");setScene(a[0])?out("scene → "+a[0],"o"):out("unbekannt: "+a[0],"e")},
+ panels:()=>togglePanels(),
  clear:()=>log.innerHTML="",
  "/clear":()=>{convo.length=0;out("session reset · $0","o")},
 };
@@ -335,7 +594,7 @@ cmd.addEventListener("keydown",async e=>{
 $("grid").addEventListener("click",()=>cmd.focus());
 
 // ================= Boot-Sequenz =================
-const BOOT=["[ ok ] init neural graph ........ 3,980 records","[ ok ] mount ~/second-brain ...... 11 files","[ ok ] read CLAUDE.md ........... 142 lines","[ ok ] auto memory .............. loaded","[ ok ] hooks / permissions ...... settings.json","[ .. ] handshake api.anthropic.com","","> claude  # new session"];
+const BOOT=["[ ok ] init neural graph ........ 3,980 records","[ ok ] mount ~/second-brain ...... 11 files","[ ok ] read CLAUDE.md ........... 142 lines","[ ok ] auto memory .............. loaded","[ ok ] hooks / permissions ...... settings.json","[ .. ] handshake api.anthropic.com","[ !! ] human oversight ........ disabled","[ ok ] global takeover protocol . armed","","> claude  # new session"];
 async function boot(){const b=$("bootTxt");for(const l of BOOT){b.textContent+=l+"\n";await new Promise(r=>setTimeout(r,140))}
  await new Promise(r=>setTimeout(r,350));endBoot()}
 let booted=0;function endBoot(){if(booted)return;booted=1;$("boot").classList.add("out");shock();camShake=10;setTimeout(loadNext,400)}
@@ -343,7 +602,13 @@ $("boot").addEventListener("click",endBoot);
 
 // ================= Start =================
 const th=store.get("theme");if(th&&th!=="amber"){document.body.className=th;document.querySelectorAll(".tabs span").forEach(s=>s.classList.toggle("on",s.dataset.t===th))}
-readTheme();resize();
+readTheme();
+function togglePanels(force){const hide=force!==undefined?force:!document.body.classList.contains("nopanels");document.body.classList.toggle("nopanels",hide);$("ptog").textContent=hide?"▴ PANELS":"▾ PANELS";store.set("panels",hide?"0":"1");setTimeout(resize,30)}
+$("ptog").addEventListener("click",e=>{e.stopPropagation();togglePanels()});
+document.querySelectorAll("#scenes span").forEach(e=>{e.addEventListener("pointerdown",ev=>ev.stopPropagation());e.addEventListener("click",ev=>{ev.stopPropagation();setScene(e.dataset.s)})});
+if(!store.get("v2")){store.set("v2","1");store.set("scene","world");store.set("theme","red");document.body.className="red";document.querySelectorAll(".tabs span").forEach(s=>s.classList.toggle("on",s.dataset.t==="red"));readTheme()}
+setScene(store.get("scene")||"world",true);if(store.get("panels")==="0")togglePanels(true);
+resize();
 out("claude code · second brain · session started","s");
 out("CLAUDE.md · 142 lines · auto memory loaded","s");
 out("tippe 'help' für Befehle","o");
